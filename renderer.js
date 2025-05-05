@@ -362,6 +362,15 @@ function addEventListeners() {
 
 // Switch between modes (search, floor plan, admin)
 function switchMode(mode) {
+  // For Admin mode, check password first
+  if (mode === 'admin') {
+    // Only prompt for password if not already in admin mode
+    if (!adminSection.classList.contains('active')) {
+      showAdminPasswordPrompt();
+      return; // Stop here, actual switch will happen after password check
+    }
+  }
+  
   // Update tab buttons
   searchModeBtn.classList.toggle('active', mode === 'search');
   floorModeBtn.classList.toggle('active', mode === 'floor');
@@ -377,6 +386,92 @@ function switchMode(mode) {
     renderFloorPlan();
     // Make sure table scale is applied
     updateTableScale();
+  }
+}
+
+// Show admin password prompt
+function showAdminPasswordPrompt() {
+  modalTitle.textContent = 'Admin Access';
+  modalContent.innerHTML = `
+    <div class="form-group">
+      <label for="admin-password">Enter Admin Password</label>
+      <input type="password" id="admin-password" class="modal-input" placeholder="Password">
+    </div>
+    <div class="modal-actions">
+      <button id="cancel-admin-login" class="btn">Cancel</button>
+      <button id="submit-admin-password" class="btn primary">Login</button>
+    </div>
+  `;
+  
+  // Add event listeners
+  document.getElementById('cancel-admin-login').addEventListener('click', () => {
+    closeModal();
+    // Revert to previous tab if canceling
+    if (searchSection.classList.contains('active')) {
+      searchModeBtn.classList.add('active');
+      adminModeBtn.classList.remove('active');
+    } else if (floorSection.classList.contains('active')) {
+      floorModeBtn.classList.add('active');
+      adminModeBtn.classList.remove('active');
+    }
+  });
+  
+  document.getElementById('submit-admin-password').addEventListener('click', checkAdminPassword);
+  
+  // Allow Enter key to submit
+  const passwordInput = document.getElementById('admin-password');
+  passwordInput.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      checkAdminPassword();
+    }
+  });
+  
+  // Focus on the password input
+  passwordInput.focus();
+  
+  // Show modal
+  modalContainer.classList.remove('hidden');
+}
+
+// Check admin password
+function checkAdminPassword() {
+  const passwordInput = document.getElementById('admin-password');
+  const enteredPassword = passwordInput.value.trim();
+  
+  // Change this to your desired admin password
+  const correctPassword = 'admin123';
+  
+  if (enteredPassword === correctPassword) {
+    closeModal();
+    // Complete the switch to admin mode
+    searchModeBtn.classList.remove('active');
+    floorModeBtn.classList.remove('active');
+    adminModeBtn.classList.add('active');
+    
+    searchSection.classList.remove('active');
+    floorSection.classList.remove('active');
+    adminSection.classList.add('active');
+  } else {
+    // Show error message
+    const errorMsg = document.createElement('div');
+    errorMsg.className = 'password-error';
+    errorMsg.textContent = 'Incorrect password. Please try again.';
+    errorMsg.style.color = '#ef4444';
+    errorMsg.style.marginTop = '0.5rem';
+    errorMsg.style.fontSize = '0.875rem';
+    
+    // Remove any existing error messages first
+    const existingError = document.querySelector('.password-error');
+    if (existingError) {
+      existingError.remove();
+    }
+    
+    // Add the error message to the modal
+    document.querySelector('.form-group').appendChild(errorMsg);
+    
+    // Clear the password field
+    passwordInput.value = '';
+    passwordInput.focus();
   }
 }
 
