@@ -293,10 +293,27 @@ function handleLetterClick(letter) {
   // Clear search input
   searchInput.value = '';
   
-  // Highlight active letter
+  // Check if the letter is already active (selected)
   const letterButtons = alphabetBar.querySelectorAll('.letter-button');
+  const activeButton = alphabetBar.querySelector(`.letter-button.active`);
+  const isAlreadyActive = activeButton && activeButton.textContent === letter;
+  
+  // Clear all active states first
   letterButtons.forEach(btn => {
-    btn.classList.toggle('active', btn.textContent === letter);
+    btn.classList.remove('active');
+  });
+  
+  // If clicking the same letter, just clear the filter
+  if (isAlreadyActive) {
+    searchResults.innerHTML = '';
+    return;
+  }
+  
+  // Otherwise activate the new letter
+  letterButtons.forEach(btn => {
+    if (btn.textContent === letter) {
+      btn.classList.add('active');
+    }
   });
   
   // Filter guests by letter
