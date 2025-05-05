@@ -186,17 +186,8 @@ function addEventListeners() {
     console.error('One or more mode buttons not found');
   }
   
-  // Search functionality - direct DOM reference to ensure we're targeting the right element
-  const searchInputElement = document.getElementById('search-input');
-  if (searchInputElement) {
-    console.log('Adding search input event listener to element:', searchInputElement);
-    // Remove any existing event listeners
-    searchInputElement.removeEventListener('input', handleSearch);
-    // Add the event listener
-    searchInputElement.addEventListener('input', handleSearch);
-  } else {
-    console.error('Search input element not found by ID');
-  }
+  // Note: Search functionality is now handled directly in the DOMContentLoaded event
+  // to ensure it's always properly attached
   
   // Modal controls
   if (modalClose) {
@@ -1534,4 +1525,101 @@ function addSampleData() {
 }
 
 // Initialize on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM content loaded - initializing application');
+  
+  // Initialize the application
+  init();
+  
+  // Directly bind search input after DOM is definitely loaded
+  const searchInputEl = document.getElementById('search-input');
+  if (searchInputEl) {
+    console.log('Binding search input after DOM loaded:', searchInputEl);
+    
+    // Use multiple event types to ensure we catch the input
+    searchInputEl.addEventListener('input', performSearch);
+    searchInputEl.addEventListener('keyup', performSearch);
+    searchInputEl.addEventListener('change', performSearch);
+    
+    // Add a manual search button next to the search input for testing
+    const searchContainer = document.querySelector('.search-input-wrapper');
+    if (searchContainer) {
+      const searchButton = document.createElement('button');
+      searchButton.textContent = 'Search';
+      searchButton.className = 'search-button';
+      searchButton.addEventListener('click', () => performSearch());
+      searchContainer.appendChild(searchButton);
+    }
+  }
+});
+
+// Expose search function globally for debugging
+window.performSearch = performSearch;
+
+// Completely new search implementation
+function performSearch() {
+  console.log('performSearch called');
+  const searchInputEl = document.getElementById('search-input');
+  const searchResultsEl = document.getElementById('search-results');
+  
+  if (!searchInputEl || !searchResultsEl) {
+    console.error('Search elements not found:', {searchInputEl, searchResultsEl});
+    return;
+  }
+  
+  // Get search text
+  const searchText = searchInputEl.value.trim().toLowerCase();
+  console.log('Performing search for:', searchText);
+  
+  // Clear letter filter visually
+  const letterButtons = document.querySelectorAll('.letter-button');
+  letterButtons.forEach(btn => btn.classList.remove('active'));
+  
+  // If empty search, clear results
+  if (!searchText) {
+    searchResultsEl.innerHTML = '';
+    return;
+  }
+  
+  // Check if we have guest data
+  if (!currentEvent.guests || !Array.isArray(currentEvent.guests) || currentEvent.guests.length === 0) {
+    console.error('No guest data available for search');
+    searchResultsEl.innerHTML = '<div class="no-results">No guest data available</div>';
+    return;
+  }
+  
+  // Log all guest names for debugging
+  console.log('Available guests:', currentEvent.guests.map(g => g.name));
+  
+  // Filter guests
+  const filteredGuests = currentEvent.guests.filter(guest => {
+    if (!guest || !guest.name) {
+      console.warn('Invalid guest data:', guest);
+      return false;
+    }
+    return guest.name.toLowerCase().includes(searchText);
+  });
+  
+  console.log(`Found ${filteredGuests.length} matching guests for "${searchText}"`);
+  
+  // Render results
+  if (filteredGuests.length === 0) {
+    searchResultsEl.innerHTML = `<div class="no-results">No guests found matching "${searchText}"</div>`;
+    return;
+  }
+  
+  // Display results directly - simpler approach
+  searchResultsEl.innerHTML = '';
+  
+  // Create container for results
+  const container = document.createElement('div');
+  container.className = 'two-column-results';
+  searchResultsEl.appendChild(container);
+  
+  // Add each guest card
+  filteredGuests.forEach(guest => {
+    const card = createGuestCard(guest);
+    card.addEventListener('click', () => showTableView(guest));
+    container.appendChild(card);
+  });
+}
