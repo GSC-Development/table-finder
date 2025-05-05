@@ -23,7 +23,8 @@ function createWindow() {
   mainWindow.loadFile('index.html');
 
   // Open DevTools for debugging
-  mainWindow.webContents.openDevTools();
+  // Commented out to prevent auto-opening dev tools
+  // mainWindow.webContents.openDevTools();
 
   // Handle window close
   mainWindow.on('closed', () => {

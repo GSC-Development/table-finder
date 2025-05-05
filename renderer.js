@@ -2,7 +2,8 @@
 
 // Sample initial data
 let currentEvent = {
-  name: 'Table Finder',
+  name: '',
+  date: '', // Add date property
   logo: null,
   tables: [],
   guests: []
@@ -17,7 +18,7 @@ let addTableBtn, editTablesBtn;
 let clearEventNameCheckbox, clearAllDataBtn;
 let modalContainer, modalTitle, modalContent, modalClose;
 let pasteDataArea, processPastedDataBtn;
-let eventNameInput, saveEventNameBtn;
+let eventNameInput, eventDateInput, saveEventNameBtn;
 let logoDropArea, logoFileInput, logoSelectBtn, logoPreview, logoPreviewImg, removeLogoBtn;
 let logoContainer, appTitle;
 let viewGuestsBtn;
@@ -80,6 +81,7 @@ function checkDOMElements() {
   pasteDataArea = document.getElementById('paste-data-area');
   processPastedDataBtn = document.getElementById('process-pasted-data-btn');
   eventNameInput = document.getElementById('event-name');
+  eventDateInput = document.getElementById('event-date');
   saveEventNameBtn = document.getElementById('save-event-name');
   
   // Logo elements
@@ -122,6 +124,7 @@ function checkDOMElements() {
     { name: 'pasteDataArea', element: pasteDataArea },
     { name: 'processPastedDataBtn', element: processPastedDataBtn },
     { name: 'eventNameInput', element: eventNameInput },
+    { name: 'eventDateInput', element: eventDateInput },
     { name: 'saveEventNameBtn', element: saveEventNameBtn },
     { name: 'logoDropArea', element: logoDropArea },
     { name: 'logoFileInput', element: logoFileInput },
@@ -212,6 +215,14 @@ function addEventListeners() {
     console.error('Save event name button not found');
   }
   
+  // Add event listener for event date changes
+  if (eventDateInput) {
+    eventDateInput.addEventListener('change', () => {
+      // Update date when changed (but don't save automatically to avoid confusion)
+      currentEvent.date = eventDateInput.value;
+    });
+  }
+  
   // Logo upload
   if (logoDropArea && logoFileInput && logoSelectBtn && removeLogoBtn) {
     console.log('Adding event listeners for logo upload');
@@ -277,10 +288,15 @@ function switchMode(mode) {
 
 // Update all UI elements
 function updateUI() {
-  // Update event name
-  appTitle.textContent = currentEvent.name;
+  // Update event name in header (use "Table Finder" if empty)
+  appTitle.textContent = currentEvent.name || 'Table Finder';
   eventNameInput.value = currentEvent.name;
-  floorTitle.textContent = `${currentEvent.name} - Floor Plan`;
+  floorTitle.textContent = `${currentEvent.name || 'Table Finder'} - Floor Plan`;
+  
+  // Update event date if it exists
+  if (eventDateInput) {
+    eventDateInput.value = currentEvent.date || '';
+  }
   
   // Update logo
   updateLogoDisplay();
@@ -973,28 +989,6 @@ function deleteTable(tableId) {
   showEditTablesModal();
 }
 
-// Clear all data
-function clearAllData() {
-  if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-    return;
-  }
-  
-  // Clear tables and guests
-  currentEvent.tables = [];
-  currentEvent.guests = [];
-  
-  // Clear event name if checked
-  if (clearEventNameCheckbox.checked) {
-    currentEvent.name = 'Table Finder';
-    currentEvent.logo = null;
-  }
-  
-  // Update UI
-  updateUI();
-  
-  alert('All data has been cleared');
-}
-
 // Show modal
 function showModal(title, content) {
   modalTitle.textContent = title;
@@ -1116,14 +1110,22 @@ function processPastedData() {
 // Save event name
 function saveEventName() {
   const newName = eventNameInput.value.trim();
+  const newDate = eventDateInput ? eventDateInput.value : '';
   
   if (!newName) {
     alert('Please enter an event name');
     return;
   }
   
+  // Update event data
   currentEvent.name = newName;
+  currentEvent.date = newDate;
+  
+  // Update UI
   updateUI();
+  
+  // Show confirmation message
+  alert('Event details saved successfully');
 }
 
 // Logo handling functions
@@ -1495,6 +1497,13 @@ function buildTableGuestStats() {
 
 // Add sample data for testing
 function addSampleData() {
+  // Add sample event date
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  currentEvent.date = `${yyyy}-${mm}-${dd}`;
+  
   // Add some sample tables
   const sampleTables = [
     { id: 'table1', name: 'Table 1', shape: 'circle', seats: 10, x: 150, y: 150 },
@@ -1622,4 +1631,27 @@ function performSearch() {
     card.addEventListener('click', () => showTableView(guest));
     container.appendChild(card);
   });
+}
+
+// Clear all data
+function clearAllData() {
+  if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+    return;
+  }
+  
+  // Clear tables and guests
+  currentEvent.tables = [];
+  currentEvent.guests = [];
+  
+  // Clear event name if checked
+  if (clearEventNameCheckbox.checked) {
+    currentEvent.name = '';
+    currentEvent.date = '';
+    currentEvent.logo = null;
+  }
+  
+  // Update UI
+  updateUI();
+  
+  alert('All data has been cleared');
 }

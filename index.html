@@ -81,15 +81,23 @@
         <div class="admin-panel">
           <!-- Event Settings -->
           <div class="panel-section">
-            <h3>Event Settings</h3>
+            <h3 class="section-heading">Event Settings</h3>
+            
             <div class="form-group">
               <label for="event-name">Event Name</label>
-              <input type="text" id="event-name" placeholder="Enter event name">
-              <button id="save-event-name" class="btn primary">Save</button>
+              <div class="form-input-group">
+                <input type="text" id="event-name" class="form-control" placeholder="Enter event name">
+                <button id="save-event-name" class="btn primary">Save</button>
+              </div>
             </div>
             
             <div class="form-group">
-              <label>Event Logo (800 x 800px recommended)</label>
+              <label for="event-date">Event Date</label>
+              <input type="date" id="event-date" class="form-control">
+            </div>
+            
+            <div class="form-group">
+              <label for="logo-uploader">Event Logo (800 x 800px recommended)</label>
               <div id="logo-drop-area" class="logo-drop-area">
                 <p>Drag & drop a logo image here</p>
                 <div class="or-separator">OR</div>
@@ -103,12 +111,16 @@
             </div>
           </div>
           
-          <!-- Paste Data -->
+          <!-- Import Guest List (formerly Paste Guest Data) -->
           <div class="panel-section">
-            <h3>Paste Guest Data</h3>
-            <p>Paste data in the format: Name,Role,TableNumber (e.g., John Doe,,1)</p>
-            <textarea id="paste-data-area" rows="10" placeholder="Paste guest data here..."></textarea>
-            <button id="process-pasted-data-btn" class="btn primary">Process Pasted Data</button>
+            <h3 class="section-heading">Import Guest List</h3>
+            <p class="help-text">Paste data in the format: Name,Role,TableNumber (e.g., John Doe,,1)</p>
+            <div class="form-group">
+              <textarea id="paste-data-area" class="form-control textarea" rows="8" placeholder="Paste guest data here..."></textarea>
+            </div>
+            <div class="form-actions">
+              <button id="process-pasted-data-btn" class="btn primary">Import Guests</button>
+            </div>
           </div>
           
           <!-- Table Management -->
