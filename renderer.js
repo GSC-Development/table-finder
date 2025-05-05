@@ -314,6 +314,9 @@ function clearLetterFilter() {
   
   if (!searchInput.value) {
     searchResults.innerHTML = '';
+  } else {
+    // Re-run search to refresh layout
+    handleSearch();
   }
 }
 
@@ -353,11 +356,20 @@ function renderSearchResults(guests) {
     return;
   }
   
+  // Check if this is from letter selection
+  const activeLetterButton = alphabetBar.querySelector('.letter-button.active');
+  const isLetterSelection = activeLetterButton !== null;
+  
+  // Create a container for guest cards
+  const resultsContainer = document.createElement('div');
+  resultsContainer.className = isLetterSelection ? 'two-column-results' : 'single-column-results';
+  searchResults.appendChild(resultsContainer);
+  
   // Show list of guests
   guests.forEach(guest => {
     const card = createGuestCard(guest);
     card.addEventListener('click', () => showTableView(guest));
-    searchResults.appendChild(card);
+    resultsContainer.appendChild(card);
   });
 }
 
@@ -450,17 +462,51 @@ function renderFloorPlan() {
     return;
   }
   
-  // Add tables to floor plan
-  currentEvent.tables.forEach(table => {
+  // Get the available container width and height
+  const floorPlanWidth = floorPlan.offsetWidth - 40; // Subtract padding
+  
+  // Calculate how many tables to place per row based on available width
+  // Use smaller table size to fit more tables
+  const tableSize = 90; // Table width + small margin
+  const tablesPerRow = Math.max(5, Math.floor(floorPlanWidth / tableSize));
+  
+  // Calculate maximum rows needed
+  const tableCount = currentEvent.tables.length;
+  const rowsNeeded = Math.ceil(tableCount / tablesPerRow);
+  
+  // Calculate horizontal spacing to distribute tables evenly
+  const horizontalSpacing = floorPlanWidth / tablesPerRow;
+  const verticalSpacing = 120; // Reduced vertical spacing
+  
+  // Calculate floor plan height based on number of rows
+  const floorPlanMinHeight = Math.max(500, (rowsNeeded * verticalSpacing) + 60);
+  
+  // Create a content container within the floor plan
+  const contentContainer = document.createElement('div');
+  contentContainer.className = 'floor-plan-content';
+  contentContainer.style.width = '100%';
+  contentContainer.style.height = `${floorPlanMinHeight}px`;
+  contentContainer.style.position = 'relative';
+  floorPlan.appendChild(contentContainer);
+  
+  // Add tables to floor plan with new positioning
+  currentEvent.tables.forEach((table, index) => {
+    // Calculate position based on index
+    const row = Math.floor(index / tablesPerRow);
+    const col = index % tablesPerRow;
+    
+    const xPos = (col * horizontalSpacing) + (horizontalSpacing / 2) - 40; // Center table in its column, accounting for smaller table size
+    const yPos = (row * verticalSpacing) + 60;
+    
+    // Update table coordinates in data model
+    table.x = xPos;
+    table.y = yPos;
+    
     const tableEl = document.createElement('div');
     tableEl.className = `table-object ${table.shape}`;
     tableEl.id = `table-${table.id}`;
-    tableEl.style.left = `${table.x}px`;
-    tableEl.style.top = `${table.y}px`;
-    
-    // All tables are circles now, so use consistent sizing
-    tableEl.style.width = '100px';
-    tableEl.style.height = '100px';
+    tableEl.style.left = `${xPos}px`;
+    tableEl.style.top = `${yPos}px`;
     
     const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
     
@@ -477,7 +523,7 @@ function renderFloorPlan() {
       showTableInfoFloating(table, tableEl);
     });
     
-    floorPlan.appendChild(tableEl);
+    contentContainer.appendChild(tableEl);
   });
   
   // Add click event to floor plan to close floating info
@@ -491,7 +537,8 @@ function showTableInfoFloating(table, tableEl) {
   
   // Get table position
   const tableRect = tableEl.getBoundingClientRect();
-  const floorPlanRect = floorPlan.getBoundingClientRect();
+  const floorPlanContentEl = floorPlan.querySelector('.floor-plan-content');
+  const floorPlanRect = floorPlanContentEl.getBoundingClientRect();
   
   // Get table guests
   const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
@@ -504,14 +551,28 @@ function showTableInfoFloating(table, tableEl) {
   // Create content
   let guestListHTML = '';
   if (tableGuests.length > 0) {
-    tableGuests.forEach(guest => {
-      guestListHTML += `
-        <div class="guest-item">
-          <div class="guest-name-primary">${guest.name}</div>
-          ${guest.role ? `<div class="guest-role-info">${guest.role}</div>` : ''}
-        </div>
-      `;
-    });
+    // If we have a lot of guests, display them in a more compact format
+    if (tableGuests.length > 10) {
+      guestListHTML = '<div class="guest-grid">';
+      tableGuests.forEach(guest => {
+        guestListHTML += `
+          <div class="guest-item-compact">
+            <div class="guest-name-primary">${guest.name}</div>
+            ${guest.role ? `<div class="guest-role-info">${guest.role}</div>` : ''}
+          </div>
+        `;
+      });
+      guestListHTML += '</div>';
+    } else {
+      tableGuests.forEach(guest => {
+        guestListHTML += `
+          <div class="guest-item">
+            <div class="guest-name-primary">${guest.name}</div>
+            ${guest.role ? `<div class="guest-role-info">${guest.role}</div>` : ''}
+          </div>
+        `;
+      });
+    }
   } else {
     guestListHTML = '<div class="guest-item">No guests assigned to this table</div>';
   }
@@ -524,64 +585,45 @@ function showTableInfoFloating(table, tableEl) {
     </div>
   `;
   
-  // Add to floor plan first to get its dimensions
-  floorPlan.appendChild(infoEl);
+  // Add to floor plan content first to get its dimensions
+  floorPlanContentEl.appendChild(infoEl);
   
   // Get info element dimensions after it's added to the DOM
   const infoRect = infoEl.getBoundingClientRect();
   
-  // Determine best position - we need to check if it fits in different positions
+  // Determine best position
   let posX, posY;
   
-  // Check if it fits to the right
-  if (tableRect.right + infoRect.width + 20 <= floorPlanRect.right) {
-    // Position to the right
+  // Try to position to the right of the table first
+  if (tableRect.right + infoRect.width <= floorPlanRect.right) {
     posX = tableRect.right - floorPlanRect.left + 20;
-    posY = Math.min(
-      tableRect.top - floorPlanRect.top,
-      floorPlanRect.bottom - floorPlanRect.top - infoRect.height - 10
-    );
+    posY = Math.max(0, tableRect.top - floorPlanRect.top);
   } 
-  // Check if it fits to the left
-  else if (tableRect.left - infoRect.width - 20 >= floorPlanRect.left) {
-    // Position to the left
+  // Try to position to the left
+  else if (tableRect.left - infoRect.width >= floorPlanRect.left) {
     posX = tableRect.left - floorPlanRect.left - infoRect.width - 20;
-    posY = Math.min(
-      tableRect.top - floorPlanRect.top,
-      floorPlanRect.bottom - floorPlanRect.top - infoRect.height - 10
-    );
+    posY = Math.max(0, tableRect.top - floorPlanRect.top);
   } 
-  // Otherwise position below or above
+  // Position above or below
   else {
-    // Center horizontally
     posX = Math.max(
-      10,
-      Math.min(
-        tableRect.left - floorPlanRect.left + (tableRect.width / 2) - (infoRect.width / 2),
-        floorPlanRect.width - infoRect.width - 10
-      )
+      0,
+      tableRect.left - floorPlanRect.left + (tableRect.width / 2) - (infoRect.width / 2)
     );
     
-    // Check if it fits below
-    if (tableRect.bottom + infoRect.height + 20 <= floorPlanRect.bottom) {
+    // Try below first
+    if (tableRect.bottom + infoRect.height <= floorPlanRect.bottom) {
       posY = tableRect.bottom - floorPlanRect.top + 20;
     } 
-    // Check if it fits above
-    else if (tableRect.top - infoRect.height - 20 >= floorPlanRect.top) {
-      posY = tableRect.top - floorPlanRect.top - infoRect.height - 20;
-    } 
-    // If it doesn't fit above or below, position where there's most space
+    // Try above
     else {
-      // Choose the side with more space
-      if (tableRect.top - floorPlanRect.top > floorPlanRect.bottom - tableRect.bottom) {
-        // More space above
-        posY = Math.max(10, tableRect.top - floorPlanRect.top - infoRect.height);
-      } else {
-        // More space below
-        posY = Math.min(floorPlanRect.height - infoRect.height - 10, tableRect.bottom - floorPlanRect.top);
-      }
+      posY = tableRect.top - floorPlanRect.top - infoRect.height - 20;
     }
   }
+  
+  // Ensure position is within bounds
+  posX = Math.max(0, Math.min(posX, floorPlanContentEl.offsetWidth - infoRect.width));
+  posY = Math.max(0, Math.min(posY, floorPlanContentEl.offsetHeight - infoRect.height));
   
   // Apply the calculated position
   infoEl.style.left = `${posX}px`;
@@ -603,18 +645,49 @@ function hideTableInfoFloating() {
   if (infoEl) {
     infoEl.remove();
   }
+  
+  // Remove any highlighted tables
+  const floorPlanContentEl = floorPlan.querySelector('.floor-plan-content');
+  if (floorPlanContentEl) {
+    const tables = floorPlanContentEl.querySelectorAll('.table-object');
+    tables.forEach(table => table.classList.remove('highlight'));
+  }
 }
 
 // Highlight table in floor plan
 function highlightTable(tableId) {
   // Clear existing highlights
-  const tables = floorPlan.querySelectorAll('.table-object');
+  const floorPlanContentEl = floorPlan.querySelector('.floor-plan-content');
+  if (!floorPlanContentEl) return;
+  
+  const tables = floorPlanContentEl.querySelectorAll('.table-object');
   tables.forEach(table => table.classList.remove('highlight'));
   
   // Add highlight to selected table
   const tableEl = document.getElementById(`table-${tableId}`);
   if (tableEl) {
     tableEl.classList.add('highlight');
+    
+    // Scroll the table into view if needed
+    const containerRect = floorPlanContentEl.getBoundingClientRect();
+    const tableRect = tableEl.getBoundingClientRect();
+    
+    // Check if table is not fully visible
+    if (tableRect.top < containerRect.top || 
+        tableRect.bottom > containerRect.bottom ||
+        tableRect.left < containerRect.left || 
+        tableRect.right > containerRect.right) {
+      
+      // Calculate scroll position to center the table
+      const scrollLeft = tableEl.offsetLeft - (floorPlan.clientWidth / 2) + (tableEl.offsetWidth / 2);
+      const scrollTop = tableEl.offsetTop - (floorPlan.clientHeight / 2) + (tableEl.offsetHeight / 2);
+      
+      floorPlan.scrollTo({
+        left: Math.max(0, scrollLeft),
+        top: Math.max(0, scrollTop),
+        behavior: 'smooth'
+      });
+    }
   }
 }
 
@@ -675,20 +748,14 @@ function addNewTable() {
     return;
   }
   
-  // Create new table
-  const tableCount = currentEvent.tables.length;
-  
-  // Position in grid pattern
-  const col = tableCount % 3;
-  const row = Math.floor(tableCount / 3);
-  
+  // Create new table (actual positioning will be handled in renderFloorPlan)
   const newTable = {
     id: `table${Date.now()}`,
     name: tableName,
     shape: 'circle', // Always use circle shape
     seats: tableSeats,
-    x: 100 + (col * 200),
-    y: 100 + (row * 150)
+    x: 0, // Will be positioned by renderFloorPlan
+    y: 0  // Will be positioned by renderFloorPlan
   };
   
   // Add to event

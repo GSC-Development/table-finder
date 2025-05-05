@@ -160,6 +160,13 @@
     height: auto;
   }
   
+  /* Floor plan specific section */
+  #floor-section.mode-section.active {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+  }
+  
   .section-title {
     font-size: 1.25rem;
     font-weight: 600;
@@ -250,15 +257,43 @@
     flex-direction: column;
   }
   
+  /* Two-column results layout */
+  .two-column-results {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    width: 100%;
+  }
+  
+  /* Responsive two-column layout */
+  @media (min-width: 768px) {
+    .two-column-results {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  /* Single column layout */
+  .single-column-results {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+  
   .result-card {
-    background-color: #fff;
-    border: 1px solid #e2e8f0;
+    background-color: white;
     border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     cursor: pointer;
-    transition: all 0.2s;
-    height: auto;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    border: 1px solid #e2e8f0;
+    width: 100%;
+  }
+  
+  /* In two-column layout, reset bottom margin for cards */
+  .two-column-results .result-card {
+    margin-bottom: 0;
   }
   
   .result-card:hover {
@@ -343,9 +378,26 @@
     border-radius: 0.5rem;
     min-height: 400px;
     position: relative;
-    overflow: visible;
+    overflow: auto;
+    padding: 20px;
+    height: 100%;
+    margin-bottom: 20px;
+    width: 100%;
+    flex: 1;
   }
   
+  /* Floor plan content container */
+  .floor-plan-content {
+    position: relative;
+    min-width: 100%;
+    width: 100%;
+    background-image: linear-gradient(rgba(226, 232, 240, 0.3) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(226, 232, 240, 0.3) 1px, transparent 1px);
+    background-size: 50px 50px;
+    margin: 0 auto;
+  }
+  
+  /* Table object styling */
   .table-object {
     position: absolute;
     background-color: #f8fafc;
@@ -356,22 +408,37 @@
     border-radius: 50%;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 80px;
+    height: 80px;
+    z-index: 1;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .table-object:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  .table-object > div {
+    width: 100%;
+    padding: 5px;
   }
   
   .table-object.highlight {
     border-color: #3b82f6;
     background-color: #eff6ff;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    z-index: 2;
   }
   
   .table-name {
     font-weight: 500;
-    font-size: 0.875rem;
-    margin-bottom: 0.25rem;
+    font-size: 0.8rem;
+    margin-bottom: 0.15rem;
   }
   
   .table-count {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #64748b;
   }
   
@@ -629,6 +696,7 @@
     max-width: 350px;
     z-index: 20;
     max-height: none;
+    overflow-y: visible;
   }
   
   .table-info-floating .close-btn {
@@ -660,6 +728,13 @@
     overflow-y: visible;
   }
   
+  /* Guest grid for tables with many guests */
+  .guest-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
   .guest-item {
     padding: 0.5rem 0;
     border-bottom: 1px solid #f1f5f9;
@@ -667,6 +742,14 @@
   
   .guest-item:last-child {
     border-bottom: none;
+  }
+  
+  .guest-item-compact {
+    padding: 4px;
+    border: 1px solid #f1f5f9;
+    border-radius: 4px;
+    font-size: 0.9em;
+    background-color: #f8fafc;
   }
   
   .guest-name-primary {
@@ -677,6 +760,12 @@
   .guest-role-info {
     font-size: 0.875rem;
     color: #64748b;
+  }
+  
+  /* Compact role style */
+  .guest-item-compact .guest-role-info {
+    font-size: 0.75rem;
+    line-height: 1.2;
   }
   
   /* Guest Management */
@@ -915,4 +1004,10 @@
   .action-bar .guest-search {
     margin-bottom: 0;
     flex-grow: 1;
+  }
+  
+  /* Floor plan section title */
+  #floor-title {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
   }
