@@ -44,7 +44,7 @@ function init() {
   // Initialize UI
   updateUI();
   
-  console.log('Application initialized');
+  console.log('Application initialized with', currentEvent.guests.length, 'guests');
 }
 
 // Check DOM elements
@@ -63,6 +63,10 @@ function checkDOMElements() {
   searchInput = document.getElementById('search-input');
   alphabetBar = document.getElementById('alphabet-bar');
   searchResults = document.getElementById('search-results');
+  
+  // Log important elements
+  console.log('Search Input Element:', searchInput);
+  console.log('Search Results Element:', searchResults);
   
   // Floor plan elements
   floorTitle = document.getElementById('floor-title');
@@ -182,12 +186,16 @@ function addEventListeners() {
     console.error('One or more mode buttons not found');
   }
   
-  // Search functionality
-  if (searchInput) {
-    console.log('Adding search input event listener');
-    searchInput.addEventListener('input', handleSearch);
+  // Search functionality - direct DOM reference to ensure we're targeting the right element
+  const searchInputElement = document.getElementById('search-input');
+  if (searchInputElement) {
+    console.log('Adding search input event listener to element:', searchInputElement);
+    // Remove any existing event listeners
+    searchInputElement.removeEventListener('input', handleSearch);
+    // Add the event listener
+    searchInputElement.addEventListener('input', handleSearch);
   } else {
-    console.error('Search input not found');
+    console.error('Search input element not found by ID');
   }
   
   // Modal controls
@@ -344,26 +352,48 @@ function clearLetterFilter() {
   }
 }
 
-// Handle search
-function handleSearch() {
-  console.log('Search input triggered: ' + searchInput.value);
+// Handle search - completely rebuilt
+function handleSearch(event) {
+  // Get the search input value directly from the DOM to ensure we're getting the current value
+  const searchInputElement = document.getElementById('search-input');
+  if (!searchInputElement) {
+    console.error('Search input element not found when handling search');
+    return;
+  }
+  
+  const searchText = searchInputElement.value.trim().toLowerCase();
+  console.log('Search triggered with text:', searchText);
   
   // Clear letter filter
   clearLetterFilter();
   
-  const searchText = searchInput.value.trim().toLowerCase();
+  // If empty search, clear results
   if (!searchText) {
     searchResults.innerHTML = '';
     return;
   }
   
+  // Get all guests
+  const allGuests = currentEvent.guests;
+  if (!allGuests || allGuests.length === 0) {
+    console.log('No guests found in data');
+    searchResults.innerHTML = '<div class="no-results">No guests available</div>';
+    return;
+  }
+  
   // Filter guests by name match
-  const filteredGuests = currentEvent.guests.filter(guest => 
+  const filteredGuests = allGuests.filter(guest => 
     guest.name.toLowerCase().includes(searchText)
   );
   
-  console.log(`Found ${filteredGuests.length} matching guests`);
+  console.log(`Found ${filteredGuests.length} matching guests for '${searchText}'`);
   
+  if (filteredGuests.length === 0) {
+    searchResults.innerHTML = `<div class="no-results">No guests found matching '${searchText}'</div>`;
+    return;
+  }
+  
+  // Render results
   renderSearchResults(filteredGuests);
 }
 
