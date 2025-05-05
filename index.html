@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table Finder</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <div class="header-content">
+        <!-- App title - now with logo -->
+        <div class="app-title-container">
+          <div id="logo-container" class="logo-container">
+            <!-- Logo will be added here by JavaScript -->
+          </div>
+          <h1 id="app-title">Table Finder</h1>
+        </div>
+        
+        <!-- Mode tabs -->
+        <div class="mode-tabs">
+          <button id="search-mode-btn" class="tab active">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            Search
+          </button>
+          <button id="floor-mode-btn" class="tab">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            Floor Plan
+          </button>
+          <button id="admin-mode-btn" class="tab">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Admin
+          </button>
+        </div>
+      </div>
+    </header>
+    
+    <!-- Main content -->
+    <main>
+      <!-- Search Mode -->
+      <section id="search-section" class="mode-section active">
+        <div class="search-container">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="search-input" placeholder="Search for a name...">
+          </div>
+          
+          <!-- Alphabet bar -->
+          <div id="alphabet-bar" class="alphabet-bar"></div>
+        </div>
+        
+        <div id="search-results" class="search-results"></div>
+      </section>
+      
+      <!-- Floor Plan Mode -->
+      <section id="floor-section" class="mode-section">
+        <h2 id="floor-title" class="section-title">Floor Plan</h2>
+        <div id="floor-plan" class="floor-plan"></div>
+      </section>
+      
+      <!-- Admin Mode -->
+      <section id="admin-section" class="mode-section">
+        <h2 class="section-title">Event Administration</h2>
+        
+        <div class="admin-panel">
+          <!-- Event Settings -->
+          <div class="panel-section">
+            <h3>Event Settings</h3>
+            <div class="form-group">
+              <label for="event-name">Event Name</label>
+              <input type="text" id="event-name" placeholder="Enter event name">
+              <button id="save-event-name" class="btn primary">Save</button>
+            </div>
+            
+            <div class="form-group">
+              <label>Event Logo (800 x 800px recommended)</label>
+              <div id="logo-drop-area" class="logo-drop-area">
+                <p>Drag & drop a logo image here</p>
+                <div class="or-separator">OR</div>
+                <input type="file" id="logo-file-input" accept="image/*" style="display:none">
+                <button id="logo-select-btn" class="btn">Select Image</button>
+              </div>
+              <div id="logo-preview" class="logo-preview hidden">
+                <img id="logo-preview-img" src="">
+                <button id="remove-logo-btn" class="btn danger">Remove Logo</button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Paste Data -->
+          <div class="panel-section">
+            <h3>Paste Guest Data</h3>
+            <p>Paste data in the format: Name,Role,TableNumber (e.g., John Doe,,1)</p>
+            <textarea id="paste-data-area" rows="10" placeholder="Paste guest data here..."></textarea>
+            <button id="process-pasted-data-btn" class="btn primary">Process Pasted Data</button>
+          </div>
+          
+          <!-- Table Management -->
+          <div class="panel-section">
+            <h3>Table Management</h3>
+            <div class="table-management">
+              <button id="add-table-btn" class="btn">Add Table</button>
+              <button id="edit-tables-btn" class="btn">Edit Tables</button>
+            </div>
+          </div>
+          
+          <!-- Guest Management -->
+          <div class="panel-section">
+            <h3>Guest Management</h3>
+            <button id="view-guests-btn" class="btn primary">View & Edit Guests</button>
+          </div>
+          
+          <!-- Clear Data -->
+          <div class="panel-section">
+            <h3>Clear Data</h3>
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="clear-event-name-checkbox">
+                Also clear event name
+              </label>
+            </div>
+            <button id="clear-all-data-btn" class="btn danger">Clear All Data</button>
+          </div>
+        </div>
+      </section>
+    </main>
+    
+    <!-- Modal Container -->
+    <div id="modal-container" class="modal-container hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modal-title">Modal Title</h3>
+          <button id="modal-close" class="modal-close">&times;</button>
+        </div>
+        <div id="modal-content" class="modal-content"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script src="renderer.js"></script>
+</body>
+</html>
