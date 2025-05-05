@@ -35,6 +35,12 @@ function init() {
   // Add event listeners
   addEventListeners();
   
+  // Add some sample data if needed for testing
+  if (currentEvent.tables.length === 0 && currentEvent.guests.length === 0) {
+    console.log('Adding sample data for testing');
+    addSampleData();
+  }
+  
   // Initialize UI
   updateUI();
   
@@ -178,6 +184,7 @@ function addEventListeners() {
   
   // Search functionality
   if (searchInput) {
+    console.log('Adding search input event listener');
     searchInput.addEventListener('input', handleSearch);
   } else {
     console.error('Search input not found');
@@ -339,6 +346,8 @@ function clearLetterFilter() {
 
 // Handle search
 function handleSearch() {
+  console.log('Search input triggered: ' + searchInput.value);
+  
   // Clear letter filter
   clearLetterFilter();
   
@@ -348,9 +357,12 @@ function handleSearch() {
     return;
   }
   
+  // Filter guests by name match
   const filteredGuests = currentEvent.guests.filter(guest => 
     guest.name.toLowerCase().includes(searchText)
   );
+  
+  console.log(`Found ${filteredGuests.length} matching guests`);
   
   renderSearchResults(filteredGuests);
 }
@@ -1469,6 +1481,37 @@ function buildTableGuestStats() {
   html += '</div>';
   
   return html;
+}
+
+// Add sample data for testing
+function addSampleData() {
+  // Add some sample tables
+  const sampleTables = [
+    { id: 'table1', name: 'Table 1', shape: 'circle', seats: 10, x: 150, y: 150 },
+    { id: 'table2', name: 'Table 2', shape: 'circle', seats: 8, x: 400, y: 150 },
+    { id: 'table3', name: 'Table 3', shape: 'circle', seats: 8, x: 650, y: 150 },
+    { id: 'table4', name: 'Table 4', shape: 'circle', seats: 10, x: 150, y: 350 },
+    { id: 'table5', name: 'Table 5', shape: 'circle', seats: 8, x: 400, y: 350 },
+    { id: 'table6', name: 'Table 6', shape: 'circle', seats: 8, x: 650, y: 350 },
+  ];
+  
+  // Add sample guests
+  const sampleGuests = [
+    { id: 'guest1', name: 'James Murphy', role: 'CEO', tableId: 'table1' },
+    { id: 'guest2', name: 'John Rawlinson', role: 'CTO', tableId: 'table1' },
+    { id: 'guest3', name: 'Jeremy Mellish', role: 'Developer', tableId: 'table1' },
+    { id: 'guest4', name: 'James Booth', role: 'Designer', tableId: 'table2' },
+    { id: 'guest5', name: 'James McNally', role: 'Marketing', tableId: 'table2' },
+    { id: 'guest6', name: 'John Joe Ip', role: 'Developer', tableId: 'table4' },
+    { id: 'guest7', name: 'James Evans', role: 'Sales', tableId: 'table6' },
+    { id: 'guest8', name: 'Jill Rowlinson', role: 'HR', tableId: 'table6' },
+  ];
+  
+  // Add data to currentEvent
+  currentEvent.tables = sampleTables;
+  currentEvent.guests = sampleGuests;
+  
+  console.log('Sample data added:', currentEvent);
 }
 
 // Initialize on DOMContentLoaded
