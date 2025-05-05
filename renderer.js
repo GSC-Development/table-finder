@@ -1214,17 +1214,6 @@ function showGuestManagementModal() {
   const guestListHTML = buildGuestListHTML();
   
   modalContent.innerHTML = `
-    <div class="guest-summary">
-      <div class="guest-count-box">
-        <span class="guest-count-number">${guestCount}</span>
-        <span class="guest-count-label">Total Guests</span>
-      </div>
-      
-      <div class="guest-table-stats">
-        ${buildTableGuestStats()}
-      </div>
-    </div>
-    
     <div class="action-bar">
       <button id="add-guest-btn" class="btn primary">Add Guest</button>
       <input type="text" id="guest-search" class="guest-search" placeholder="Search guests...">
