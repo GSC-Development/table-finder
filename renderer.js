@@ -5,6 +5,7 @@ let currentEvent = {
   name: '',
   date: '', // Add date property
   logo: null,
+  floorPlanImage: null, // Add floor plan image
   tables: [],
   guests: []
 };
@@ -35,6 +36,10 @@ let tableOffset = { x: 0, y: 0 };
 
 // Add new state variables to track table placement
 let placedTables = new Set(); // IDs of tables placed on floor plan
+
+// Add new DOM elements for floor plan background image
+let floorImageDropArea, floorImageFileInput, floorImageSelectBtn;
+let floorImagePreview, floorImagePreviewImg, removeFloorImageBtn;
 
 // Initialize application
 function init() {
@@ -121,6 +126,14 @@ function checkDOMElements() {
   // Guest Management
   viewGuestsBtn = document.getElementById('view-guests-btn');
   
+  // Floor plan image elements
+  floorImageDropArea = document.getElementById('floor-image-drop-area');
+  floorImageFileInput = document.getElementById('floor-image-file-input');
+  floorImageSelectBtn = document.getElementById('floor-image-select-btn');
+  floorImagePreview = document.getElementById('floor-image-preview');
+  floorImagePreviewImg = document.getElementById('floor-image-preview-img');
+  removeFloorImageBtn = document.getElementById('remove-floor-image-btn');
+  
   // Log missing elements
   const missingElements = [];
   [
@@ -161,7 +174,13 @@ function checkDOMElements() {
     { name: 'modalTitle', element: modalTitle },
     { name: 'modalContent', element: modalContent },
     { name: 'modalClose', element: modalClose },
-    { name: 'viewGuestsBtn', element: viewGuestsBtn }
+    { name: 'viewGuestsBtn', element: viewGuestsBtn },
+    { name: 'floorImageDropArea', element: floorImageDropArea },
+    { name: 'floorImageFileInput', element: floorImageFileInput },
+    { name: 'floorImageSelectBtn', element: floorImageSelectBtn },
+    { name: 'floorImagePreview', element: floorImagePreview },
+    { name: 'floorImagePreviewImg', element: floorImagePreviewImg },
+    { name: 'removeFloorImageBtn', element: removeFloorImageBtn }
   ].forEach(item => {
     if (!item.element) {
       missingElements.push(item.name);
@@ -309,6 +328,19 @@ function addEventListeners() {
   // Add document event listeners for drag and drop
   document.addEventListener('mousemove', handleMouseMove);
   document.addEventListener('mouseup', handleMouseUp);
+
+  // Floor plan image upload
+  if (floorImageDropArea && floorImageFileInput && floorImageSelectBtn && removeFloorImageBtn) {
+    console.log('Adding event listeners for floor plan image upload');
+    floorImageDropArea.addEventListener('dragover', handleFloorImageDragOver);
+    floorImageDropArea.addEventListener('dragleave', handleFloorImageDragLeave);
+    floorImageDropArea.addEventListener('drop', handleFloorImageDrop);
+    floorImageSelectBtn.addEventListener('click', () => floorImageFileInput.click());
+    floorImageFileInput.addEventListener('change', handleFloorImageSelect);
+    removeFloorImageBtn.addEventListener('click', removeFloorPlanImage);
+  } else {
+    console.error('One or more floor plan image elements not found');
+  }
 }
 
 // Switch between modes (search, floor plan, admin)
@@ -575,6 +607,18 @@ function renderFloorPlan() {
   
   // Update lock status display
   updateLockStatus();
+  
+  // Add background image if available
+  if (currentEvent.floorPlanImage) {
+    floorGrid.classList.add('has-bg-image');
+    const bgImage = document.createElement('img');
+    bgImage.className = 'floor-grid-bg-image';
+    bgImage.src = currentEvent.floorPlanImage;
+    bgImage.alt = 'Floor Plan Background';
+    floorGrid.appendChild(bgImage);
+  } else {
+    floorGrid.classList.remove('has-bg-image');
+  }
   
   // Separate tables into available and placed
   const availableTables = currentEvent.tables.filter(table => !placedTables.has(table.id));
@@ -1871,5 +1915,75 @@ function highlightTable(tableId) {
         behavior: 'smooth'
       });
     }
+  }
+}
+
+// Floor plan image handling functions
+function handleFloorImageDragOver(e) {
+  e.preventDefault();
+  floorImageDropArea.classList.add('highlight');
+}
+
+function handleFloorImageDragLeave() {
+  floorImageDropArea.classList.remove('highlight');
+}
+
+function handleFloorImageDrop(e) {
+  e.preventDefault();
+  floorImageDropArea.classList.remove('highlight');
+  
+  const files = e.dataTransfer.files;
+  if (files.length) {
+    processFloorPlanImage(files[0]);
+  }
+}
+
+function handleFloorImageSelect(e) {
+  const files = e.target.files;
+  if (files.length) {
+    processFloorPlanImage(files[0]);
+  }
+}
+
+function processFloorPlanImage(file) {
+  if (!file.type.match('image.*')) {
+    alert('Please select an image file');
+    return;
+  }
+  
+  const reader = new FileReader();
+  
+  reader.onload = function(e) {
+    currentEvent.floorPlanImage = e.target.result;
+    updateFloorPlanImageDisplay();
+    
+    // If floor plan section is active, re-render it
+    if (floorSection.classList.contains('active')) {
+      renderFloorPlan();
+    }
+  };
+  
+  reader.readAsDataURL(file);
+}
+
+function updateFloorPlanImageDisplay() {
+  // Update preview in admin panel
+  if (currentEvent.floorPlanImage) {
+    floorImagePreviewImg.src = currentEvent.floorPlanImage;
+    floorImagePreview.classList.remove('hidden');
+    floorImageDropArea.classList.add('hidden');
+  } else {
+    floorImagePreview.classList.add('hidden');
+    floorImageDropArea.classList.remove('hidden');
+  }
+}
+
+function removeFloorPlanImage() {
+  currentEvent.floorPlanImage = null;
+  updateFloorPlanImageDisplay();
+  
+  // If floor plan section is active, re-render it
+  if (floorSection.classList.contains('active')) {
+    renderFloorPlan();
   }
 }

@@ -157,10 +157,25 @@
           
           <!-- Table Management -->
           <div class="panel-section">
-            <h3>Table Management</h3>
+            <h3 class="section-heading">Table Management</h3>
             <div class="table-management">
               <button id="add-table-btn" class="btn">Add Table</button>
               <button id="edit-tables-btn" class="btn">Edit Tables</button>
+            </div>
+            
+            <!-- Floor Plan Background Image -->
+            <div class="form-group" style="margin-top: 1rem;">
+              <label for="floor-plan-image">Floor Plan Background Image</label>
+              <div id="floor-image-drop-area" class="logo-drop-area">
+                <p>Drag & drop a floor plan image here</p>
+                <div class="or-separator">OR</div>
+                <input type="file" id="floor-image-file-input" accept="image/*" style="display:none">
+                <button id="floor-image-select-btn" class="btn">Select Image</button>
+              </div>
+              <div id="floor-image-preview" class="logo-preview hidden">
+                <img id="floor-image-preview-img" src="">
+                <button id="remove-floor-image-btn" class="btn danger">Remove Floor Plan Image</button>
+              </div>
             </div>
           </div>
           
