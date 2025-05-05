@@ -70,7 +70,21 @@
       
       <!-- Floor Plan Mode -->
       <section id="floor-section" class="mode-section">
-        <h2 id="floor-title" class="section-title">Floor Plan</h2>
+        <div class="floor-plan-header">
+          <h2 id="floor-title" class="section-title">Floor Plan</h2>
+          <div class="floor-plan-actions">
+            <button id="toggle-lock-btn" class="btn">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <span id="lock-status-text">Locked</span>
+            </button>
+            <div id="edit-mode-indicator" class="edit-mode-indicator hidden">
+              <span class="edit-mode-text">Edit Mode</span>
+            </div>
+          </div>
+        </div>
         <div id="floor-plan" class="floor-plan"></div>
       </section>
       

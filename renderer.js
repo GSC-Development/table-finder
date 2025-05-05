@@ -23,6 +23,16 @@ let logoDropArea, logoFileInput, logoSelectBtn, logoPreview, logoPreviewImg, rem
 let logoContainer, appTitle;
 let viewGuestsBtn;
 
+// Floor plan drag and drop elements
+let toggleLockBtn, lockStatusText, editModeIndicator;
+
+// Drag and drop state
+let isFloorPlanLocked = true;
+let draggedTable = null;
+let dragStartX = 0;
+let dragStartY = 0;
+let tableOffset = { x: 0, y: 0 };
+
 // Initialize application
 function init() {
   console.log('Initializing application...');
@@ -72,6 +82,9 @@ function checkDOMElements() {
   // Floor plan elements
   floorTitle = document.getElementById('floor-title');
   floorPlan = document.getElementById('floor-plan');
+  toggleLockBtn = document.getElementById('toggle-lock-btn');
+  lockStatusText = document.getElementById('lock-status-text');
+  editModeIndicator = document.getElementById('edit-mode-indicator');
   
   // Admin elements
   addTableBtn = document.getElementById('add-table-btn');
@@ -117,6 +130,9 @@ function checkDOMElements() {
     { name: 'searchResults', element: searchResults },
     { name: 'floorTitle', element: floorTitle },
     { name: 'floorPlan', element: floorPlan },
+    { name: 'toggleLockBtn', element: toggleLockBtn },
+    { name: 'lockStatusText', element: lockStatusText },
+    { name: 'editModeIndicator', element: editModeIndicator },
     { name: 'addTableBtn', element: addTableBtn },
     { name: 'editTablesBtn', element: editTablesBtn },
     { name: 'clearEventNameCheckbox', element: clearEventNameCheckbox },
@@ -215,6 +231,14 @@ function addEventListeners() {
     console.error('Save event name button not found');
   }
   
+  // Floor plan lock/unlock
+  if (toggleLockBtn) {
+    console.log('Adding event listener for floor plan lock toggle');
+    toggleLockBtn.addEventListener('click', toggleFloorPlanLock);
+  } else {
+    console.error('Toggle lock button not found');
+  }
+  
   // Add event listener for event date changes
   if (eventDateInput) {
     eventDateInput.addEventListener('change', () => {
@@ -251,14 +275,6 @@ function addEventListeners() {
     console.error('Edit tables button not found');
   }
   
-  // Clear data
-  if (clearAllDataBtn) {
-    console.log('Adding event listener for clear all data button');
-    clearAllDataBtn.addEventListener('click', clearAllData);
-  } else {
-    console.error('Clear all data button not found');
-  }
-  
   // Guest Management
   if (viewGuestsBtn) {
     console.log('Adding event listener for view guests button');
@@ -266,6 +282,26 @@ function addEventListeners() {
   } else {
     console.error('View guests button not found');
   }
+  
+  // Search input
+  if (searchInput) {
+    console.log('Adding event listener for search input');
+    searchInput.addEventListener('input', handleSearch);
+  } else {
+    console.error('Search input not found');
+  }
+  
+  // Clear all data
+  if (clearAllDataBtn) {
+    console.log('Adding event listener for clear all data button');
+    clearAllDataBtn.addEventListener('click', clearAllData);
+  } else {
+    console.error('Clear all data button not found');
+  }
+
+  // Add document event listeners for drag and drop
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
 }
 
 // Switch between modes (search, floor plan, admin)
@@ -528,6 +564,9 @@ function renderFloorPlan() {
     return;
   }
   
+  // Update lock status display
+  updateLockStatus();
+  
   // Get the available container width and height
   const floorPlanWidth = floorPlan.offsetWidth - 40; // Subtract padding
   
@@ -555,24 +594,30 @@ function renderFloorPlan() {
   contentContainer.style.position = 'relative';
   floorPlan.appendChild(contentContainer);
   
-  // Add tables to floor plan with new positioning
+  // Add tables to floor plan
   currentEvent.tables.forEach((table, index) => {
-    // Calculate position based on index
-    const row = Math.floor(index / tablesPerRow);
-    const col = index % tablesPerRow;
-    
-    const xPos = (col * horizontalSpacing) + (horizontalSpacing / 2) - 40; // Center table in its column, accounting for smaller table size
-    const yPos = (row * verticalSpacing) + 60;
-    
-    // Update table coordinates in data model
-    table.x = xPos;
-    table.y = yPos;
+    // If table doesn't have coordinates yet (new table or first-time layout),
+    // calculate position based on index
+    if (!table.hasOwnProperty('x') || !table.hasOwnProperty('y') || 
+        (table.x === 0 && table.y === 0)) {
+      const row = Math.floor(index / tablesPerRow);
+      const col = index % tablesPerRow;
+      
+      table.x = (col * horizontalSpacing) + (horizontalSpacing / 2) - 40; // Center table in its column
+      table.y = (row * verticalSpacing) + 60;
+    }
     
     const tableEl = document.createElement('div');
     tableEl.className = `table-object ${table.shape}`;
+    
+    // Add draggable class if floor plan is unlocked
+    if (!isFloorPlanLocked) {
+      tableEl.classList.add('draggable');
+    }
+    
     tableEl.id = `table-${table.id}`;
-    tableEl.style.left = `${xPos}px`;
-    tableEl.style.top = `${yPos}px`;
+    tableEl.style.left = `${table.x}px`;
+    tableEl.style.top = `${table.y}px`;
     
     const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
     
@@ -583,11 +628,15 @@ function renderFloorPlan() {
       </div>
     `;
     
-    // Add click event to show table info
-    tableEl.addEventListener('click', (e) => {
-      e.stopPropagation();
-      showTableInfoFloating(table, tableEl);
-    });
+    // Add mouse down event for dragging if unlocked, click event for viewing if locked
+    if (!isFloorPlanLocked) {
+      tableEl.addEventListener('mousedown', (e) => handleTableMouseDown(e, table));
+    } else {
+      tableEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showTableInfoFloating(table, tableEl);
+      });
+    }
     
     contentContainer.appendChild(tableEl);
   });
@@ -1654,4 +1703,104 @@ function clearAllData() {
   updateUI();
   
   alert('All data has been cleared');
+}
+
+// Toggle floor plan lock/unlock
+function toggleFloorPlanLock() {
+  isFloorPlanLocked = !isFloorPlanLocked;
+  updateLockStatus();
+  renderFloorPlan(); // Re-render with new draggable status
+}
+
+// Update lock status UI
+function updateLockStatus() {
+  if (isFloorPlanLocked) {
+    toggleLockBtn.classList.remove('unlocked');
+    lockStatusText.textContent = 'Locked';
+    editModeIndicator.classList.add('hidden');
+  } else {
+    toggleLockBtn.classList.add('unlocked');
+    lockStatusText.textContent = 'Unlocked';
+    editModeIndicator.classList.remove('hidden');
+  }
+}
+
+// Handle mouse down on a table for dragging
+function handleTableMouseDown(e, table) {
+  // Only enable dragging if floor plan is unlocked
+  if (isFloorPlanLocked) return;
+  
+  // Prevent default behavior and propagation
+  e.preventDefault();
+  e.stopPropagation();
+  
+  // Store the dragged table
+  draggedTable = table;
+  
+  // Get mouse position
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  
+  // Calculate offset from table position
+  const tableEl = document.getElementById(`table-${table.id}`);
+  const rect = tableEl.getBoundingClientRect();
+  tableOffset.x = dragStartX - rect.left;
+  tableOffset.y = dragStartY - rect.top;
+  
+  // Add dragging class
+  tableEl.classList.add('dragging');
+}
+
+// Handle mouse move while dragging
+function handleMouseMove(e) {
+  if (!draggedTable || isFloorPlanLocked) return;
+  
+  // Get content container for relative positioning
+  const contentContainer = floorPlan.querySelector('.floor-plan-content');
+  const contentRect = contentContainer.getBoundingClientRect();
+  
+  // Calculate new position
+  const newX = e.clientX - contentRect.left - tableOffset.x;
+  const newY = e.clientY - contentRect.top - tableOffset.y;
+  
+  // Constrain to boundaries
+  const constrainedX = Math.max(0, Math.min(newX, contentRect.width - 80)); // 80 is table width
+  const constrainedY = Math.max(0, Math.min(newY, contentRect.height - 80)); // 80 is table height
+  
+  // Update table element position
+  const tableEl = document.getElementById(`table-${draggedTable.id}`);
+  tableEl.style.left = `${constrainedX}px`;
+  tableEl.style.top = `${constrainedY}px`;
+  
+  // Hide any floating info while dragging
+  hideTableInfoFloating();
+}
+
+// Handle mouse up after dragging
+function handleMouseUp(e) {
+  if (!draggedTable || isFloorPlanLocked) return;
+  
+  // Get content container for relative positioning
+  const contentContainer = floorPlan.querySelector('.floor-plan-content');
+  const contentRect = contentContainer.getBoundingClientRect();
+  
+  // Get table element
+  const tableEl = document.getElementById(`table-${draggedTable.id}`);
+  
+  // Remove dragging class
+  tableEl.classList.remove('dragging');
+  
+  // Get final position
+  const finalX = parseFloat(tableEl.style.left);
+  const finalY = parseFloat(tableEl.style.top);
+  
+  // Update the data model
+  const tableIndex = currentEvent.tables.findIndex(t => t.id === draggedTable.id);
+  if (tableIndex >= 0) {
+    currentEvent.tables[tableIndex].x = finalX;
+    currentEvent.tables[tableIndex].y = finalY;
+  }
+  
+  // Reset drag state
+  draggedTable = null;
 }
