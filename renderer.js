@@ -294,30 +294,73 @@ function updateUI() {
   renderFloorPlan();
 }
 
-// Completely new search implementation
-function performSearch() {
-  console.log('Performing search...');
+// Letter filter functionality
+function handleLetterClick(letter) {
+  // Clear search input
+  searchInput.value = '';
   
-  // Get the search input value directly from the DOM
-  const searchInputElement = document.getElementById('search-input');
-  if (!searchInputElement) {
-    console.error('Search input element not found');
+  // Check if the letter is already active (selected)
+  const letterButtons = alphabetBar.querySelectorAll('.letter-button');
+  const activeButton = alphabetBar.querySelector(`.letter-button.active`);
+  const isAlreadyActive = activeButton && activeButton.textContent === letter;
+  
+  // Clear all active states first
+  letterButtons.forEach(btn => {
+    btn.classList.remove('active');
+  });
+  
+  // If clicking the same letter, just clear the filter
+  if (isAlreadyActive) {
+    searchResults.innerHTML = '';
     return;
   }
   
-  const searchResults = document.getElementById('search-results');
-  if (!searchResults) {
-    console.error('Search results element not found');
+  // Otherwise activate the new letter
+  letterButtons.forEach(btn => {
+    if (btn.textContent === letter) {
+      btn.classList.add('active');
+    }
+  });
+  
+  // Filter guests by letter
+  const filteredGuests = currentEvent.guests.filter(guest => 
+    guest.name.charAt(0).toUpperCase() === letter
+  );
+  
+  renderSearchResults(filteredGuests);
+}
+
+// Clear letter filter
+function clearLetterFilter() {
+  const letterButtons = alphabetBar.querySelectorAll('.letter-button');
+  letterButtons.forEach(btn => btn.classList.remove('active'));
+  
+  if (!searchInput.value) {
+    searchResults.innerHTML = '';
+  } else {
+    // Re-run search to refresh layout
+    handleSearch();
+  }
+}
+
+// Handle search - completely rebuilt
+function handleSearch(event) {
+  // Get the search input value directly from the DOM to ensure we're getting the current value
+  const searchInputElement = document.getElementById('search-input');
+  if (!searchInputElement) {
+    console.error('Search input element not found when handling search');
     return;
   }
   
   const searchText = searchInputElement.value.trim().toLowerCase();
-  console.log('Search text:', searchText);
+  console.log('Search triggered with text:', searchText);
   
-  // If empty search, show tables instead
+  // Clear letter filter
+  clearLetterFilter();
+  
+  // If empty search, clear results
   if (!searchText) {
-    console.log('Empty search, loading tables');
-    loadTablesOnMainPage();
+    searchResults.innerHTML = '';
     return;
   }
   
@@ -343,62 +386,6 @@ function performSearch() {
   
   // Render results
   renderSearchResults(filteredGuests);
-}
-
-// Letter filter functionality
-function handleLetterClick(letter) {
-  // Clear search input
-  searchInput.value = '';
-  
-  // Check if the letter is already active (selected)
-  const letterButtons = alphabetBar.querySelectorAll('.letter-button');
-  const activeButton = alphabetBar.querySelector(`.letter-button.active`);
-  const isAlreadyActive = activeButton && activeButton.textContent === letter;
-  
-  // Clear all active states first
-  letterButtons.forEach(btn => {
-    btn.classList.remove('active');
-  });
-  
-  // If clicking the same letter, just clear the filter and show tables
-  if (isAlreadyActive) {
-    loadTablesOnMainPage();
-    return;
-  }
-  
-  // Otherwise activate the new letter
-  letterButtons.forEach(btn => {
-    if (btn.textContent === letter) {
-      btn.classList.add('active');
-    }
-  });
-  
-  // Filter guests by letter
-  const filteredGuests = currentEvent.guests.filter(guest => 
-    guest.name.charAt(0).toUpperCase() === letter
-  );
-  
-  renderSearchResults(filteredGuests);
-}
-
-// Clear letter filter
-function clearLetterFilter() {
-  const letterButtons = alphabetBar.querySelectorAll('.letter-button');
-  letterButtons.forEach(btn => btn.classList.remove('active'));
-  
-  if (!searchInput.value) {
-    // Show tables if no search active
-    loadTablesOnMainPage();
-  } else {
-    // Re-run search to refresh layout
-    handleSearch();
-  }
-}
-
-// Handle search (this is used by the input event listener)
-function handleSearch() {
-  // For consistency, just call our new performSearch function
-  performSearch();
 }
 
 // Render search results
@@ -986,20 +973,38 @@ function deleteTable(tableId) {
   showEditTablesModal();
 }
 
-// Show modal with dynamic content
-function showModal() {
-  const modal = document.querySelector('.modal');
-  if (modal) {
-    modal.style.display = 'block';
+// Clear all data
+function clearAllData() {
+  if (!confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+    return;
   }
+  
+  // Clear tables and guests
+  currentEvent.tables = [];
+  currentEvent.guests = [];
+  
+  // Clear event name if checked
+  if (clearEventNameCheckbox.checked) {
+    currentEvent.name = 'Table Finder';
+    currentEvent.logo = null;
+  }
+  
+  // Update UI
+  updateUI();
+  
+  alert('All data has been cleared');
 }
 
-// Hide modal
-function hideModal() {
-  const modal = document.querySelector('.modal');
-  if (modal) {
-    modal.style.display = 'none';
-  }
+// Show modal
+function showModal(title, content) {
+  modalTitle.textContent = title;
+  modalContent.innerHTML = content;
+  modalContainer.classList.remove('hidden');
+}
+
+// Close modal
+function closeModal() {
+  modalContainer.classList.add('hidden');
 }
 
 // Process pasted data
@@ -1520,425 +1525,101 @@ function addSampleData() {
 }
 
 // Initialize on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Application initialized');
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM content loaded - initializing application');
   
-  // Load initial data
-  loadEventData();
+  // Initialize the application
+  init();
   
-  // Update UI with loaded data
-  updateUI();
-  
-  // Initialize table view with infinite scrolling
-  initializeTableView();
-  
-  // Set up event listeners
-  setupEventListeners();
-});
-
-// Global variables for table pagination
-const TABLES_PER_PAGE = 6;
-let currentTablePage = 0;
-let isLoadingTables = false;
-let allTablesLoaded = false;
-
-// Initialize tables on the main page with infinite scroll
-function initializeTableView() {
-  console.log('Initializing table view with infinite scroll');
-  
-  // Reset pagination
-  currentTablePage = 0;
-  isLoadingTables = false;
-  allTablesLoaded = false;
-  
-  // Load initial batch of tables
-  loadTablesOnMainPage();
-  
-  // Add scroll listener to the search section
-  const searchSection = document.querySelector('.search-section');
-  if (searchSection) {
-    // Remove any existing event listeners first to avoid duplicates
-    searchSection.removeEventListener('scroll', handleSearchScroll);
+  // Directly bind search input after DOM is definitely loaded
+  const searchInputEl = document.getElementById('search-input');
+  if (searchInputEl) {
+    console.log('Binding search input after DOM loaded:', searchInputEl);
     
-    // Add new event listener
-    searchSection.addEventListener('scroll', handleSearchScroll);
-    console.log('Added scroll event listener to search section');
-  }
-}
-
-// Handle scroll event in search section
-function handleSearchScroll() {
-  const searchSection = document.querySelector('.search-section');
-  if (!searchSection) return;
-  
-  // Check if we're near the bottom
-  const { scrollTop, scrollHeight, clientHeight } = searchSection;
-  
-  // If we're within 100px of the bottom and not already loading
-  if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoadingTables && !allTablesLoaded) {
-    console.log('Near bottom, loading more tables');
-    loadMoreTables();
-  }
-}
-
-// Load initial tables on main page
-function loadTablesOnMainPage() {
-  console.log('Loading tables on main page');
-  
-  // Clear existing content
-  searchResults.innerHTML = '';
-  
-  // Create a container for table grid
-  const tableGrid = document.createElement('div');
-  tableGrid.className = 'table-grid-container';
-  searchResults.appendChild(tableGrid);
-  
-  // Add loading indicator at the bottom
-  const loadingIndicator = document.createElement('div');
-  loadingIndicator.className = 'loading-indicator';
-  loadingIndicator.innerHTML = 'Loading tables...';
-  searchResults.appendChild(loadingIndicator);
-  
-  // Load initial batch
-  loadMoreTables();
-}
-
-// Load more tables as user scrolls
-function loadMoreTables() {
-  if (isLoadingTables || allTablesLoaded) return;
-  
-  isLoadingTables = true;
-  console.log(`Loading more tables. Page: ${currentTablePage}`);
-  
-  // Get table grid container
-  const tableGrid = document.querySelector('.table-grid-container');
-  if (!tableGrid) {
-    console.error('Table grid container not found');
-    isLoadingTables = false;
-    return;
-  }
-  
-  // Simulate loading delay (remove in production)
-  setTimeout(() => {
-    displayTablesBatch(tableGrid);
-    isLoadingTables = false;
-  }, 500);
-}
-
-// Display a batch of tables
-function displayTablesBatch(tableGrid) {
-  // Get tables from current event
-  const tables = currentEvent.tables || [];
-  
-  if (tables.length === 0) {
-    // No tables to display
-    const loadingIndicator = document.querySelector('.loading-indicator');
-    if (loadingIndicator) {
-      loadingIndicator.innerHTML = 'No tables available. Add tables to get started.';
-    }
-    allTablesLoaded = true;
-    return;
-  }
-  
-  // Calculate start and end indices for this batch
-  const startIndex = currentTablePage * TABLES_PER_PAGE;
-  const endIndex = Math.min(startIndex + TABLES_PER_PAGE, tables.length);
-  
-  // Check if we've loaded all tables
-  if (startIndex >= tables.length) {
-    allTablesLoaded = true;
-    const loadingIndicator = document.querySelector('.loading-indicator');
-    if (loadingIndicator) {
-      loadingIndicator.innerHTML = 'All tables loaded';
-    }
-    return;
-  }
-  
-  // Display this batch of tables
-  for (let i = startIndex; i < endIndex; i++) {
-    const table = tables[i];
-    const tableCard = createTableCard(table);
-    tableGrid.appendChild(tableCard);
-  }
-  
-  // Update the current page
-  currentTablePage++;
-  
-  // Update loading indicator
-  const loadingIndicator = document.querySelector('.loading-indicator');
-  if (loadingIndicator) {
-    if (endIndex >= tables.length) {
-      loadingIndicator.innerHTML = 'All tables loaded';
-      allTablesLoaded = true;
-    } else {
-      loadingIndicator.innerHTML = 'Scroll for more tables...';
-    }
-  }
-}
-
-// Create a table card element
-function createTableCard(table) {
-  const tableCard = document.createElement('div');
-  tableCard.className = 'table-card';
-  tableCard.dataset.tableId = table.id;
-  
-  // Table number
-  const tableNumber = document.createElement('h3');
-  tableNumber.textContent = `Table ${table.number}`;
-  tableCard.appendChild(tableNumber);
-  
-  // Table capacity
-  const tableCapacity = document.createElement('p');
-  tableCapacity.textContent = `Capacity: ${table.capacity}`;
-  tableCard.appendChild(tableCapacity);
-  
-  // Count guests at this table
-  const guestsAtTable = currentEvent.guests.filter(guest => guest.tableId === table.id);
-  const guestCount = document.createElement('p');
-  guestCount.textContent = `${guestsAtTable.length} guests assigned`;
-  tableCard.appendChild(guestCount);
-  
-  // Add click event to show table details
-  tableCard.addEventListener('click', () => showTableDetails(table));
-  
-  return tableCard;
-}
-
-// Show table details in a modal
-function showTableDetails(table) {
-  const modalTitle = document.querySelector('.modal-title');
-  const modalBody = document.querySelector('.modal-body');
-  
-  if (!modalTitle || !modalBody) {
-    console.error('Modal elements not found');
-    return;
-  }
-  
-  // Set title
-  modalTitle.textContent = `Table ${table.number} Details`;
-  
-  // Clear and populate body
-  modalBody.innerHTML = '';
-  
-  // Table info
-  const tableInfo = document.createElement('div');
-  tableInfo.className = 'table-details';
-  
-  tableInfo.innerHTML = `
-    <h4>Table Information</h4>
-    <p><strong>Number:</strong> ${table.number}</p>
-    <p><strong>Capacity:</strong> ${table.capacity}</p>
-  `;
-  
-  modalBody.appendChild(tableInfo);
-  
-  // Guests at this table
-  const guestsAtTable = currentEvent.guests.filter(guest => guest.tableId === table.id);
-  
-  const guestList = document.createElement('div');
-  guestList.className = 'table-guest-list';
-  
-  guestList.innerHTML = `<h4>Guests (${guestsAtTable.length}/${table.capacity})</h4>`;
-  
-  if (guestsAtTable.length === 0) {
-    guestList.innerHTML += '<p>No guests assigned to this table</p>';
-  } else {
-    const guestUl = document.createElement('ul');
-    guestsAtTable.forEach(guest => {
-      const li = document.createElement('li');
-      li.textContent = guest.name;
-      guestUl.appendChild(li);
-    });
-    guestList.appendChild(guestUl);
-  }
-  
-  modalBody.appendChild(guestList);
-  
-  // Show modal
-  showModal();
-}
-
-// Expose search function globally for debugging
-window.performSearch = performSearch;
-
-// Set up event listeners for UI interactions
-function setupEventListeners() {
-  // Search input
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    searchInput.addEventListener('input', performSearch);
-    searchInput.addEventListener('keyup', performSearch);
+    // Use multiple event types to ensure we catch the input
+    searchInputEl.addEventListener('input', performSearch);
+    searchInputEl.addEventListener('keyup', performSearch);
+    searchInputEl.addEventListener('change', performSearch);
     
-    // Add search button for manual trigger
+    // Add a manual search button next to the search input for testing
     const searchContainer = document.querySelector('.search-input-wrapper');
     if (searchContainer) {
       const searchButton = document.createElement('button');
       searchButton.textContent = 'Search';
       searchButton.className = 'search-button';
-      searchButton.addEventListener('click', performSearch);
+      searchButton.addEventListener('click', () => performSearch());
       searchContainer.appendChild(searchButton);
     }
   }
-  
-  // Letter filter buttons
-  const letterRow = document.getElementById('letter-row');
-  if (letterRow) {
-    for (let i = 65; i <= 90; i++) {
-      const letter = String.fromCharCode(i);
-      const button = document.createElement('button');
-      button.textContent = letter;
-      button.className = 'letter-button';
-      button.addEventListener('click', () => filterByLetter(letter));
-      letterRow.appendChild(button);
-    }
-  }
-  
-  // Bind other UI elements as needed
-  // Add guest button
-  const addGuestBtn = document.getElementById('add-guest-button');
-  if (addGuestBtn) {
-    addGuestBtn.addEventListener('click', showAddGuestModal);
-  }
-  
-  // Modal close button
-  const closeModalBtn = document.querySelector('.close-button');
-  if (closeModalBtn) {
-    closeModalBtn.addEventListener('click', hideModal);
-  }
-  
-  // Add event listener to close modal when clicking outside
-  window.addEventListener('click', (event) => {
-    const modal = document.querySelector('.modal');
-    if (event.target === modal) {
-      hideModal();
-    }
-  });
-}
+});
 
-// Filter guests by first letter
-function filterByLetter(letter) {
-  console.log(`Filtering by letter: ${letter}`);
+// Expose search function globally for debugging
+window.performSearch = performSearch;
+
+// Completely new search implementation
+function performSearch() {
+  console.log('performSearch called');
+  const searchInputEl = document.getElementById('search-input');
+  const searchResultsEl = document.getElementById('search-results');
   
-  // Toggle active state on this letter button
-  const clickedButton = document.querySelector(`.letter-button:nth-child(${letter.charCodeAt(0) - 64})`);
-  
-  if (clickedButton.classList.contains('active')) {
-    // If already active, clear filter and show tables
-    clearLetterFilter();
-    loadTablesOnMainPage();
+  if (!searchInputEl || !searchResultsEl) {
+    console.error('Search elements not found:', {searchInputEl, searchResultsEl});
     return;
   }
   
-  // Clear any active letter filters
-  clearLetterFilter();
+  // Get search text
+  const searchText = searchInputEl.value.trim().toLowerCase();
+  console.log('Performing search for:', searchText);
   
-  // Set this letter as active
-  clickedButton.classList.add('active');
-  
-  // Filter guests by this letter
-  const filteredGuests = currentEvent.guests.filter(guest => {
-    const firstName = guest.name.split(' ')[0];
-    return firstName.charAt(0).toUpperCase() === letter;
-  });
-  
-  if (filteredGuests.length === 0) {
-    searchResults.innerHTML = `<div class="no-results">No guests found with names starting with '${letter}'</div>`;
-    return;
-  }
-  
-  // Render the filtered results
-  renderSearchResults(filteredGuests);
-}
-
-// Clear letter filter
-function clearLetterFilter() {
+  // Clear letter filter visually
   const letterButtons = document.querySelectorAll('.letter-button');
   letterButtons.forEach(btn => btn.classList.remove('active'));
-}
-
-// Render search results
-function renderSearchResults(guests) {
-  // Clear current results
-  searchResults.innerHTML = '';
   
-  // Create a container for the results
-  const resultsContainer = document.createElement('div');
-  resultsContainer.className = 'guest-results-container';
-  searchResults.appendChild(resultsContainer);
-  
-  // Add each guest card
-  guests.forEach(guest => {
-    const card = createGuestCard(guest);
-    card.addEventListener('click', () => showGuestDetails(guest));
-    resultsContainer.appendChild(card);
-  });
-}
-
-// Create a guest card
-function createGuestCard(guest) {
-  const card = document.createElement('div');
-  card.className = 'guest-card';
-  
-  // Name
-  const name = document.createElement('h3');
-  name.textContent = guest.name;
-  card.appendChild(name);
-  
-  // Table information
-  let tableInfo = 'Not assigned to a table';
-  if (guest.tableId) {
-    const table = currentEvent.tables.find(t => t.id === guest.tableId);
-    if (table) {
-      tableInfo = `Table ${table.number}`;
-    }
-  }
-  
-  const tableText = document.createElement('p');
-  tableText.textContent = tableInfo;
-  card.appendChild(tableText);
-  
-  return card;
-}
-
-// Show guest details
-function showGuestDetails(guest) {
-  const modalTitle = document.querySelector('.modal-title');
-  const modalBody = document.querySelector('.modal-body');
-  
-  if (!modalTitle || !modalBody) {
-    console.error('Modal elements not found');
+  // If empty search, clear results
+  if (!searchText) {
+    searchResultsEl.innerHTML = '';
     return;
   }
   
-  // Set title
-  modalTitle.textContent = guest.name;
+  // Check if we have guest data
+  if (!currentEvent.guests || !Array.isArray(currentEvent.guests) || currentEvent.guests.length === 0) {
+    console.error('No guest data available for search');
+    searchResultsEl.innerHTML = '<div class="no-results">No guest data available</div>';
+    return;
+  }
   
-  // Clear and populate body
-  modalBody.innerHTML = '';
+  // Log all guest names for debugging
+  console.log('Available guests:', currentEvent.guests.map(g => g.name));
   
-  // Guest info
-  const guestInfo = document.createElement('div');
-  guestInfo.className = 'guest-details';
-  
-  let tableInfo = 'Not assigned to a table';
-  if (guest.tableId) {
-    const table = currentEvent.tables.find(t => t.id === guest.tableId);
-    if (table) {
-      tableInfo = `Table ${table.number}`;
+  // Filter guests
+  const filteredGuests = currentEvent.guests.filter(guest => {
+    if (!guest || !guest.name) {
+      console.warn('Invalid guest data:', guest);
+      return false;
     }
+    return guest.name.toLowerCase().includes(searchText);
+  });
+  
+  console.log(`Found ${filteredGuests.length} matching guests for "${searchText}"`);
+  
+  // Render results
+  if (filteredGuests.length === 0) {
+    searchResultsEl.innerHTML = `<div class="no-results">No guests found matching "${searchText}"</div>`;
+    return;
   }
   
-  guestInfo.innerHTML = `
-    <p><strong>Name:</strong> ${guest.name}</p>
-    <p><strong>Table:</strong> ${tableInfo}</p>
-  `;
+  // Display results directly - simpler approach
+  searchResultsEl.innerHTML = '';
   
-  if (guest.role) {
-    guestInfo.innerHTML += `<p><strong>Role:</strong> ${guest.role}</p>`;
-  }
+  // Create container for results
+  const container = document.createElement('div');
+  container.className = 'two-column-results';
+  searchResultsEl.appendChild(container);
   
-  modalBody.appendChild(guestInfo);
-  
-  // Show modal
-  showModal();
+  // Add each guest card
+  filteredGuests.forEach(guest => {
+    const card = createGuestCard(guest);
+    card.addEventListener('click', () => showTableView(guest));
+    container.appendChild(card);
+  });
 }
