@@ -13,7 +13,7 @@ let currentEvent = {
 let searchModeBtn, floorModeBtn, adminModeBtn;
 let searchSection, floorSection, adminSection;
 let searchInput, alphabetBar, searchResults;
-let floorTitle, floorPlan;
+let floorTitle, floorPlan, floorGrid, availableTablesContainer;
 let addTableBtn, editTablesBtn;
 let clearEventNameCheckbox, clearAllDataBtn;
 let modalContainer, modalTitle, modalContent, modalClose;
@@ -32,6 +32,9 @@ let draggedTable = null;
 let dragStartX = 0;
 let dragStartY = 0;
 let tableOffset = { x: 0, y: 0 };
+
+// Add new state variables to track table placement
+let placedTables = new Set(); // IDs of tables placed on floor plan
 
 // Initialize application
 function init() {
@@ -82,6 +85,8 @@ function checkDOMElements() {
   // Floor plan elements
   floorTitle = document.getElementById('floor-title');
   floorPlan = document.getElementById('floor-plan');
+  floorGrid = document.getElementById('floor-grid');
+  availableTablesContainer = document.getElementById('available-tables');
   toggleLockBtn = document.getElementById('toggle-lock-btn');
   lockStatusText = document.getElementById('lock-status-text');
   editModeIndicator = document.getElementById('edit-mode-indicator');
@@ -130,6 +135,8 @@ function checkDOMElements() {
     { name: 'searchResults', element: searchResults },
     { name: 'floorTitle', element: floorTitle },
     { name: 'floorPlan', element: floorPlan },
+    { name: 'floorGrid', element: floorGrid },
+    { name: 'availableTablesContainer', element: availableTablesContainer },
     { name: 'toggleLockBtn', element: toggleLockBtn },
     { name: 'lockStatusText', element: lockStatusText },
     { name: 'editModeIndicator', element: editModeIndicator },
@@ -552,10 +559,12 @@ function showTableView(selectedGuest) {
 
 // Render floor plan
 function renderFloorPlan() {
-  floorPlan.innerHTML = '';
+  // Clear the floor grid and available tables
+  floorGrid.innerHTML = '';
+  availableTablesContainer.innerHTML = '';
   
   if (!currentEvent.tables.length) {
-    floorPlan.innerHTML = `
+    availableTablesContainer.innerHTML = `
       <div class="no-results">
         No tables have been created yet.<br>
         Go to Admin to add tables.
@@ -567,243 +576,197 @@ function renderFloorPlan() {
   // Update lock status display
   updateLockStatus();
   
-  // Get the available container width and height
-  const floorPlanWidth = floorPlan.offsetWidth - 40; // Subtract padding
+  // Separate tables into available and placed
+  const availableTables = currentEvent.tables.filter(table => !placedTables.has(table.id));
+  const placedTablesArray = currentEvent.tables.filter(table => placedTables.has(table.id));
   
-  // Calculate how many tables to place per row based on available width
-  // Use smaller table size to fit more tables
-  const tableSize = 90; // Table width + small margin
-  const tablesPerRow = Math.max(5, Math.floor(floorPlanWidth / tableSize));
-  
-  // Calculate maximum rows needed
-  const tableCount = currentEvent.tables.length;
-  const rowsNeeded = Math.ceil(tableCount / tablesPerRow);
-  
-  // Calculate horizontal spacing to distribute tables evenly
-  const horizontalSpacing = floorPlanWidth / tablesPerRow;
-  const verticalSpacing = 120; // Reduced vertical spacing
-  
-  // Calculate floor plan height based on number of rows
-  const floorPlanMinHeight = Math.max(500, (rowsNeeded * verticalSpacing) + 60);
-  
-  // Create a content container within the floor plan
-  const contentContainer = document.createElement('div');
-  contentContainer.className = 'floor-plan-content';
-  contentContainer.style.width = '100%';
-  contentContainer.style.height = `${floorPlanMinHeight}px`;
-  contentContainer.style.position = 'relative';
-  floorPlan.appendChild(contentContainer);
-  
-  // Add tables to floor plan
-  currentEvent.tables.forEach((table, index) => {
-    // If table doesn't have coordinates yet (new table or first-time layout),
-    // calculate position based on index
-    if (!table.hasOwnProperty('x') || !table.hasOwnProperty('y') || 
-        (table.x === 0 && table.y === 0)) {
-      const row = Math.floor(index / tablesPerRow);
-      const col = index % tablesPerRow;
-      
-      table.x = (col * horizontalSpacing) + (horizontalSpacing / 2) - 40; // Center table in its column
-      table.y = (row * verticalSpacing) + 60;
-    }
-    
-    const tableEl = document.createElement('div');
-    tableEl.className = `table-object ${table.shape}`;
-    
-    // Add draggable class if floor plan is unlocked
-    if (!isFloorPlanLocked) {
-      tableEl.classList.add('draggable');
-    }
-    
-    tableEl.id = `table-${table.id}`;
-    tableEl.style.left = `${table.x}px`;
-    tableEl.style.top = `${table.y}px`;
-    
+  // Render available tables in the side panel
+  availableTables.forEach(table => {
     const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
     
+    const tableEl = document.createElement('div');
+    tableEl.className = 'available-table';
+    tableEl.dataset.tableId = table.id;
+    
     tableEl.innerHTML = `
-      <div>
-        <div class="table-name">${table.name}</div>
-        <div class="table-count">${tableGuests.length} guests</div>
-      </div>
+      <div class="table-name">${table.name}</div>
+      <div class="table-count">${tableGuests.length} guests</div>
     `;
     
-    // Add mouse down event for dragging if unlocked, click event for viewing if locked
+    // Make available tables draggable if unlocked
     if (!isFloorPlanLocked) {
-      tableEl.addEventListener('mousedown', (e) => handleTableMouseDown(e, table));
-    } else {
-      tableEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showTableInfoFloating(table, tableEl);
+      tableEl.classList.add('draggable');
+      tableEl.draggable = true;
+      
+      // Add drag start event
+      tableEl.addEventListener('dragstart', (e) => {
+        draggedTable = table;
+        e.dataTransfer.setData('text/plain', table.id);
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => {
+          tableEl.classList.add('dragging');
+        }, 0);
+      });
+      
+      // Add drag end event
+      tableEl.addEventListener('dragend', () => {
+        tableEl.classList.remove('dragging');
+        draggedTable = null;
       });
     }
     
-    contentContainer.appendChild(tableEl);
+    availableTablesContainer.appendChild(tableEl);
   });
   
-  // Add click event to floor plan to close floating info
-  floorPlan.addEventListener('click', hideTableInfoFloating);
+  // Make the floor grid a drop target
+  if (!isFloorPlanLocked) {
+    floorGrid.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+    
+    floorGrid.addEventListener('drop', handleGridDrop);
+  }
+  
+  // Render placed tables on the grid
+  placedTablesArray.forEach(table => {
+    renderTableOnGrid(table);
+  });
 }
 
-// Show floating table info
-function showTableInfoFloating(table, tableEl) {
-  // Remove existing floating info if any
-  hideTableInfoFloating();
+// Handle dropping a table on the grid
+function handleGridDrop(e) {
+  e.preventDefault();
   
-  // Get table position
-  const tableRect = tableEl.getBoundingClientRect();
-  const floorPlanContentEl = floorPlan.querySelector('.floor-plan-content');
-  const floorPlanRect = floorPlanContentEl.getBoundingClientRect();
+  if (!draggedTable || isFloorPlanLocked) return;
   
-  // Get table guests
+  // Get the drop position relative to the grid
+  const rect = floorGrid.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  // Calculate position as percentage of grid dimensions (for responsive positioning)
+  const xPercent = (x / rect.width) * 100;
+  const yPercent = (y / rect.height) * 100;
+  
+  // Update table position
+  draggedTable.xPercent = xPercent;
+  draggedTable.yPercent = yPercent;
+  
+  // Mark table as placed
+  placedTables.add(draggedTable.id);
+  
+  // Render the table on the grid
+  renderTableOnGrid(draggedTable);
+  
+  // Re-render the floor plan to update both panels
+  renderFloorPlan();
+}
+
+// Render a single table on the grid
+function renderTableOnGrid(table) {
+  const tableEl = document.createElement('div');
+  tableEl.className = 'table-object';
+  tableEl.id = `table-${table.id}`;
+  
+  // Position using percentages for responsiveness
+  tableEl.style.left = `${table.xPercent}%`;
+  tableEl.style.top = `${table.yPercent}%`;
+  
+  // Adjust for centering (half of table width/height)
+  tableEl.style.transform = 'translate(-50%, -50%)';
+  
+  // Add draggable class if plan is unlocked
+  if (!isFloorPlanLocked) {
+    tableEl.classList.add('draggable');
+  }
+  
   const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
   
-  // Create floating info element
-  const infoEl = document.createElement('div');
-  infoEl.className = 'table-info-floating';
-  infoEl.id = 'table-info-floating';
+  tableEl.innerHTML = `
+    <div>
+      <div class="table-name">${table.name}</div>
+      <div class="table-count">${tableGuests.length} guests</div>
+    </div>
+    ${!isFloorPlanLocked ? '<span class="table-remove-btn">×</span>' : ''}
+  `;
   
-  // Create content
-  let guestListHTML = '';
-  if (tableGuests.length > 0) {
-    // If we have a lot of guests, display them in a more compact format
-    if (tableGuests.length > 10) {
-      guestListHTML = '<div class="guest-grid">';
-      tableGuests.forEach(guest => {
-        guestListHTML += `
-          <div class="guest-item-compact">
-            <div class="guest-name-primary">${guest.name}</div>
-            ${guest.role ? `<div class="guest-role-info">${guest.role}</div>` : ''}
-          </div>
-        `;
-      });
-      guestListHTML += '</div>';
-    } else {
-      tableGuests.forEach(guest => {
-        guestListHTML += `
-          <div class="guest-item">
-            <div class="guest-name-primary">${guest.name}</div>
-            ${guest.role ? `<div class="guest-role-info">${guest.role}</div>` : ''}
-          </div>
-        `;
+  // Handle interactions based on lock state
+  if (!isFloorPlanLocked) {
+    tableEl.addEventListener('mousedown', (e) => {
+      // Don't initiate drag if clicking the remove button
+      if (e.target.classList.contains('table-remove-btn')) {
+        e.stopPropagation();
+        return;
+      }
+      handleTableMouseDown(e, table);
+    });
+    
+    // Add remove button click handler
+    const removeBtn = tableEl.querySelector('.table-remove-btn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Remove table from placed tables
+        placedTables.delete(table.id);
+        // Re-render the floor plan
+        renderFloorPlan();
       });
     }
   } else {
-    guestListHTML = '<div class="guest-item">No guests assigned to this table</div>';
+    tableEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showTableInfoFloating(table, tableEl);
+    });
   }
   
-  infoEl.innerHTML = `
-    <button class="close-btn">&times;</button>
-    <div class="table-info-title">${table.name}</div>
-    <div class="guest-list">
-      ${guestListHTML}
-    </div>
-  `;
+  floorGrid.appendChild(tableEl);
+}
+
+// Handle mouse move while dragging
+function handleMouseMove(e) {
+  if (!draggedTable || isFloorPlanLocked) return;
   
-  // Add to floor plan content first to get its dimensions
-  floorPlanContentEl.appendChild(infoEl);
-  
-  // Get info element dimensions after it's added to the DOM
-  const infoRect = infoEl.getBoundingClientRect();
-  
-  // Determine best position
-  let posX, posY;
-  
-  // Try to position to the right of the table first
-  if (tableRect.right + infoRect.width <= floorPlanRect.right) {
-    posX = tableRect.right - floorPlanRect.left + 20;
-    posY = Math.max(0, tableRect.top - floorPlanRect.top);
-  } 
-  // Try to position to the left
-  else if (tableRect.left - infoRect.width >= floorPlanRect.left) {
-    posX = tableRect.left - floorPlanRect.left - infoRect.width - 20;
-    posY = Math.max(0, tableRect.top - floorPlanRect.top);
-  } 
-  // Position above or below
-  else {
-    posX = Math.max(
-      0,
-      tableRect.left - floorPlanRect.left + (tableRect.width / 2) - (infoRect.width / 2)
-    );
+  if (placedTables.has(draggedTable.id)) {
+    // Get grid dimensions
+    const gridRect = floorGrid.getBoundingClientRect();
     
-    // Try below first
-    if (tableRect.bottom + infoRect.height <= floorPlanRect.bottom) {
-      posY = tableRect.bottom - floorPlanRect.top + 20;
-    } 
-    // Try above
-    else {
-      posY = tableRect.top - floorPlanRect.top - infoRect.height - 20;
+    // Calculate new position as percentage
+    const xPercent = ((e.clientX - gridRect.left) / gridRect.width) * 100;
+    const yPercent = ((e.clientY - gridRect.top) / gridRect.height) * 100;
+    
+    // Constrain to boundaries (0-100%)
+    const constrainedX = Math.max(0, Math.min(xPercent, 100));
+    const constrainedY = Math.max(0, Math.min(yPercent, 100));
+    
+    // Update table element position
+    const tableEl = document.getElementById(`table-${draggedTable.id}`);
+    if (tableEl) {
+      tableEl.style.left = `${constrainedX}%`;
+      tableEl.style.top = `${constrainedY}%`;
     }
-  }
-  
-  // Ensure position is within bounds
-  posX = Math.max(0, Math.min(posX, floorPlanContentEl.offsetWidth - infoRect.width));
-  posY = Math.max(0, Math.min(posY, floorPlanContentEl.offsetHeight - infoRect.height));
-  
-  // Apply the calculated position
-  infoEl.style.left = `${posX}px`;
-  infoEl.style.top = `${posY}px`;
-  
-  // Add close button event
-  infoEl.querySelector('.close-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
+    
+    // Update the data model
+    draggedTable.xPercent = constrainedX;
+    draggedTable.yPercent = constrainedY;
+    
+    // Hide any floating info while dragging
     hideTableInfoFloating();
-  });
-  
-  // Highlight the selected table
-  highlightTable(table.id);
-}
-
-// Hide floating table info
-function hideTableInfoFloating() {
-  const infoEl = document.getElementById('table-info-floating');
-  if (infoEl) {
-    infoEl.remove();
-  }
-  
-  // Remove any highlighted tables
-  const floorPlanContentEl = floorPlan.querySelector('.floor-plan-content');
-  if (floorPlanContentEl) {
-    const tables = floorPlanContentEl.querySelectorAll('.table-object');
-    tables.forEach(table => table.classList.remove('highlight'));
   }
 }
 
-// Highlight table in floor plan
-function highlightTable(tableId) {
-  // Clear existing highlights
-  const floorPlanContentEl = floorPlan.querySelector('.floor-plan-content');
-  if (!floorPlanContentEl) return;
+// Handle mouse up after dragging
+function handleMouseUp(e) {
+  if (!draggedTable || isFloorPlanLocked) return;
   
-  const tables = floorPlanContentEl.querySelectorAll('.table-object');
-  tables.forEach(table => table.classList.remove('highlight'));
-  
-  // Add highlight to selected table
-  const tableEl = document.getElementById(`table-${tableId}`);
+  // Get table element
+  const tableEl = document.getElementById(`table-${draggedTable.id}`);
   if (tableEl) {
-    tableEl.classList.add('highlight');
-    
-    // Scroll the table into view if needed
-    const containerRect = floorPlanContentEl.getBoundingClientRect();
-    const tableRect = tableEl.getBoundingClientRect();
-    
-    // Check if table is not fully visible
-    if (tableRect.top < containerRect.top || 
-        tableRect.bottom > containerRect.bottom ||
-        tableRect.left < containerRect.left || 
-        tableRect.right > containerRect.right) {
-      
-      // Calculate scroll position to center the table
-      const scrollLeft = tableEl.offsetLeft - (floorPlan.clientWidth / 2) + (tableEl.offsetWidth / 2);
-      const scrollTop = tableEl.offsetTop - (floorPlan.clientHeight / 2) + (tableEl.offsetHeight / 2);
-      
-      floorPlan.scrollTo({
-        left: Math.max(0, scrollLeft),
-        top: Math.max(0, scrollTop),
-        behavior: 'smooth'
-      });
-    }
+    tableEl.classList.remove('dragging');
   }
+  
+  // Reset drag state
+  draggedTable = null;
 }
 
 // Import CSV
@@ -863,14 +826,14 @@ function addNewTable() {
     return;
   }
   
-  // Create new table (actual positioning will be handled in renderFloorPlan)
+  // Create new table
   const newTable = {
     id: `table${Date.now()}`,
     name: tableName,
     shape: 'circle', // Always use circle shape
     seats: tableSeats,
-    x: 0, // Will be positioned by renderFloorPlan
-    y: 0  // Will be positioned by renderFloorPlan
+    xPercent: 50, // Default to center if placed
+    yPercent: 50
   };
   
   // Add to event
@@ -1120,8 +1083,8 @@ function processPastedData() {
         name: tableName,
         shape: 'circle', // Always use circle shape
         seats: 10,
-        x: 100 + (col * 200),
-        y: 100 + (row * 150)
+        xPercent: 50, // Default to center if placed
+        yPercent: 50
       };
       
       currentEvent.tables.push(newTable);
@@ -1555,12 +1518,12 @@ function addSampleData() {
   
   // Add some sample tables
   const sampleTables = [
-    { id: 'table1', name: 'Table 1', shape: 'circle', seats: 10, x: 150, y: 150 },
-    { id: 'table2', name: 'Table 2', shape: 'circle', seats: 8, x: 400, y: 150 },
-    { id: 'table3', name: 'Table 3', shape: 'circle', seats: 8, x: 650, y: 150 },
-    { id: 'table4', name: 'Table 4', shape: 'circle', seats: 10, x: 150, y: 350 },
-    { id: 'table5', name: 'Table 5', shape: 'circle', seats: 8, x: 400, y: 350 },
-    { id: 'table6', name: 'Table 6', shape: 'circle', seats: 8, x: 650, y: 350 },
+    { id: 'table1', name: 'Table 1', shape: 'circle', seats: 10, xPercent: 50, yPercent: 50 },
+    { id: 'table2', name: 'Table 2', shape: 'circle', seats: 8, xPercent: 50, yPercent: 50 },
+    { id: 'table3', name: 'Table 3', shape: 'circle', seats: 8, xPercent: 50, yPercent: 50 },
+    { id: 'table4', name: 'Table 4', shape: 'circle', seats: 10, xPercent: 50, yPercent: 50 },
+    { id: 'table5', name: 'Table 5', shape: 'circle', seats: 8, xPercent: 50, yPercent: 50 },
+    { id: 'table6', name: 'Table 6', shape: 'circle', seats: 8, xPercent: 50, yPercent: 50 },
   ];
   
   // Add sample guests
@@ -1730,6 +1693,9 @@ function handleTableMouseDown(e, table) {
   // Only enable dragging if floor plan is unlocked
   if (isFloorPlanLocked) return;
   
+  // Prevent dragging if clicking the remove button
+  if (e.target.classList.contains('table-remove-btn')) return;
+  
   // Prevent default behavior and propagation
   e.preventDefault();
   e.stopPropagation();
@@ -1751,56 +1717,159 @@ function handleTableMouseDown(e, table) {
   tableEl.classList.add('dragging');
 }
 
-// Handle mouse move while dragging
-function handleMouseMove(e) {
-  if (!draggedTable || isFloorPlanLocked) return;
-  
-  // Get content container for relative positioning
-  const contentContainer = floorPlan.querySelector('.floor-plan-content');
-  const contentRect = contentContainer.getBoundingClientRect();
-  
-  // Calculate new position
-  const newX = e.clientX - contentRect.left - tableOffset.x;
-  const newY = e.clientY - contentRect.top - tableOffset.y;
-  
-  // Constrain to boundaries
-  const constrainedX = Math.max(0, Math.min(newX, contentRect.width - 80)); // 80 is table width
-  const constrainedY = Math.max(0, Math.min(newY, contentRect.height - 80)); // 80 is table height
-  
-  // Update table element position
-  const tableEl = document.getElementById(`table-${draggedTable.id}`);
-  tableEl.style.left = `${constrainedX}px`;
-  tableEl.style.top = `${constrainedY}px`;
-  
-  // Hide any floating info while dragging
+// Show floating table info
+function showTableInfoFloating(table, tableEl) {
+  // Remove existing floating info if any
   hideTableInfoFloating();
-}
-
-// Handle mouse up after dragging
-function handleMouseUp(e) {
-  if (!draggedTable || isFloorPlanLocked) return;
   
-  // Get content container for relative positioning
-  const contentContainer = floorPlan.querySelector('.floor-plan-content');
-  const contentRect = contentContainer.getBoundingClientRect();
+  // Get table position
+  const tableRect = tableEl.getBoundingClientRect();
+  const gridRect = floorGrid.getBoundingClientRect();
   
-  // Get table element
-  const tableEl = document.getElementById(`table-${draggedTable.id}`);
+  // Get table guests
+  const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
   
-  // Remove dragging class
-  tableEl.classList.remove('dragging');
+  // Create floating info element
+  const infoEl = document.createElement('div');
+  infoEl.className = 'table-info-floating';
+  infoEl.id = 'table-info-floating';
   
-  // Get final position
-  const finalX = parseFloat(tableEl.style.left);
-  const finalY = parseFloat(tableEl.style.top);
-  
-  // Update the data model
-  const tableIndex = currentEvent.tables.findIndex(t => t.id === draggedTable.id);
-  if (tableIndex >= 0) {
-    currentEvent.tables[tableIndex].x = finalX;
-    currentEvent.tables[tableIndex].y = finalY;
+  // Create content
+  let guestListHTML = '';
+  if (tableGuests.length > 0) {
+    // If we have a lot of guests, display them in a more compact format
+    if (tableGuests.length > 10) {
+      guestListHTML = '<div class="guest-grid">';
+      tableGuests.forEach(guest => {
+        guestListHTML += `
+          <div class="guest-item-compact">
+            <div class="guest-name-primary">${guest.name}</div>
+            ${guest.role ? `<div class="guest-role-info">${guest.role}</div>` : ''}
+          </div>
+        `;
+      });
+      guestListHTML += '</div>';
+    } else {
+      tableGuests.forEach(guest => {
+        guestListHTML += `
+          <div class="guest-item">
+            <div class="guest-name-primary">${guest.name}</div>
+            ${guest.role ? `<div class="guest-role-info">${guest.role}</div>` : ''}
+          </div>
+        `;
+      });
+    }
+  } else {
+    guestListHTML = '<div class="guest-item">No guests assigned to this table</div>';
   }
   
-  // Reset drag state
-  draggedTable = null;
+  infoEl.innerHTML = `
+    <button class="close-btn">&times;</button>
+    <div class="table-info-title">${table.name}</div>
+    <div class="guest-list">
+      ${guestListHTML}
+    </div>
+  `;
+  
+  // Add to floor grid first to get its dimensions
+  floorGrid.appendChild(infoEl);
+  
+  // Get info element dimensions after it's added to the DOM
+  const infoRect = infoEl.getBoundingClientRect();
+  
+  // Determine best position
+  let posX, posY;
+  
+  // Calculate position relative to the grid
+  const tableX = parseFloat(tableEl.style.left);
+  const tableY = parseFloat(tableEl.style.top);
+  
+  // Try to position to the right of the table
+  if (tableRect.right + infoRect.width <= gridRect.right) {
+    posX = tableX + 5; // 5% to the right
+    posY = tableY;
+  } 
+  // Try to position to the left
+  else if (tableRect.left - infoRect.width >= gridRect.left) {
+    posX = tableX - 5; // 5% to the left
+    posY = tableY;
+  } 
+  // Position above or below
+  else {
+    posX = tableX;
+    
+    // Try below first
+    if (tableRect.bottom + infoRect.height <= gridRect.bottom) {
+      posY = tableY + 5; // 5% below
+    } 
+    // Try above
+    else {
+      posY = tableY - 5; // 5% above
+    }
+  }
+  
+  // Apply the calculated position (as percentages)
+  infoEl.style.left = `${posX}%`;
+  infoEl.style.top = `${posY}%`;
+  
+  // Add close button event
+  infoEl.querySelector('.close-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideTableInfoFloating();
+  });
+  
+  // Highlight the selected table
+  highlightTable(table.id);
+}
+
+// Hide floating table info
+function hideTableInfoFloating() {
+  const infoEl = document.getElementById('table-info-floating');
+  if (infoEl) {
+    infoEl.remove();
+  }
+  
+  // Remove any highlighted tables
+  const floorGridContentEl = floorGrid.querySelector('.floor-plan-content');
+  if (floorGridContentEl) {
+    const tables = floorGridContentEl.querySelectorAll('.table-object');
+    tables.forEach(table => table.classList.remove('highlight'));
+  }
+}
+
+// Highlight table in floor plan
+function highlightTable(tableId) {
+  // Clear existing highlights
+  const floorGridContentEl = floorGrid.querySelector('.floor-plan-content');
+  if (!floorGridContentEl) return;
+  
+  const tables = floorGridContentEl.querySelectorAll('.table-object');
+  tables.forEach(table => table.classList.remove('highlight'));
+  
+  // Add highlight to selected table
+  const tableEl = document.getElementById(`table-${tableId}`);
+  if (tableEl) {
+    tableEl.classList.add('highlight');
+    
+    // Scroll the table into view if needed
+    const containerRect = floorGrid.getBoundingClientRect();
+    const tableRect = tableEl.getBoundingClientRect();
+    
+    // Check if table is not fully visible
+    if (tableRect.top < containerRect.top || 
+        tableRect.bottom > containerRect.bottom ||
+        tableRect.left < containerRect.left || 
+        tableRect.right > containerRect.right) {
+      
+      // Calculate scroll position to center the table
+      const scrollLeft = tableEl.offsetLeft - (floorGrid.clientWidth / 2) + (tableEl.offsetWidth / 2);
+      const scrollTop = tableEl.offsetTop - (floorGrid.clientHeight / 2) + (tableEl.offsetHeight / 2);
+      
+      floorGrid.scrollTo({
+        left: Math.max(0, scrollLeft),
+        top: Math.max(0, scrollTop),
+        behavior: 'smooth'
+      });
+    }
+  }
 }

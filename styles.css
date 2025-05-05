@@ -459,25 +459,88 @@
     }
   }
   
-  .floor-plan {
+  /* New Floor Plan Layout with Side Panel */
+  .floor-plan-layout {
+    display: flex;
+    gap: 1rem;
+    height: calc(100vh - 180px);
+  }
+  
+  /* Side panel for available tables */
+  .floor-plan-panel {
+    width: 220px;
+    flex-shrink: 0;
     background-color: #fff;
     border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
-    min-height: 400px;
-    position: relative;
-    overflow: auto;
-    padding: 20px;
-    height: 100%;
-    margin-bottom: 20px;
-    width: 100%;
-    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    border-bottom: 3px solid #1e40af;
   }
   
-  /* Floor plan content container */
-  .floor-plan-content {
+  .panel-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .available-tables {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  /* Available table item */
+  .available-table {
+    background-color: #f8fafc;
+    border: 2px solid #94a3b8;
+    border-radius: 50%;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+  }
+  
+  .available-table:hover {
+    transform: scale(1.05);
+    background-color: #eff6ff;
+    border-color: #3b82f6;
+  }
+  
+  /* Main floor plan container */
+  .floor-plan-container {
+    flex: 1;
+    overflow: hidden;
     position: relative;
-    min-width: 100%;
+  }
+  
+  .floor-plan {
     width: 100%;
+    height: 100%;
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 3px solid #1e40af;
+  }
+  
+  /* Floor grid with 16:9 aspect ratio */
+  .floor-grid {
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio */
+    position: relative;
     background-image: linear-gradient(rgba(226, 232, 240, 0.3) 1px, transparent 1px),
                       linear-gradient(90deg, rgba(226, 232, 240, 0.3) 1px, transparent 1px);
     background-size: 50px 50px;
@@ -516,6 +579,40 @@
     background-color: #eff6ff;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
     z-index: 2;
+  }
+  
+  /* Remove button for tables */
+  .table-remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 18px;
+    height: 18px;
+    background-color: #94a3b8;
+    color: white;
+    border-radius: 50%;
+    border: 1px solid white;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 3;
+    padding: 0;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  .table-object:hover .table-remove-btn {
+    opacity: 1;
+  }
+  
+  .table-remove-btn:hover {
+    background-color: #64748b;
   }
   
   /* Draggable table styling */
