@@ -408,6 +408,63 @@
     gap: 1rem;
   }
   
+  /* Table scale control */
+  .table-scale-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #f8fafc;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+  }
+  
+  .table-scale-control label {
+    font-size: 0.875rem;
+    color: #475569;
+    white-space: nowrap;
+  }
+  
+  input[type="range"].slider {
+    width: 100px;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e2e8f0;
+    outline: none;
+    border-radius: 3px;
+  }
+  
+  input[type="range"].slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  input[type="range"].slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  #table-scale-value {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #475569;
+    width: 40px;
+    text-align: center;
+  }
+  
   #toggle-lock-btn {
     display: flex;
     align-items: center;
@@ -509,12 +566,13 @@
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: transform 0.2s ease;
+    transform-origin: center center;
   }
   
   .available-table:hover {
-    transform: scale(1.05);
     background-color: #eff6ff;
     border-color: #3b82f6;
+    transform: scale(1.05);
   }
   
   /* Main floor plan container */
@@ -579,10 +637,12 @@
     height: 80px;
     z-index: 1;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Center positioning with translate - will be combined with scale in JS */
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
   }
   
   .table-object:hover {
-    transform: scale(1.05);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
   }
   

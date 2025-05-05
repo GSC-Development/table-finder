@@ -6,6 +6,7 @@ let currentEvent = {
   date: '', // Add date property
   logo: null,
   floorPlanImage: null, // Add floor plan image
+  tableScale: 100, // Add table scale (percentage)
   tables: [],
   guests: []
 };
@@ -26,6 +27,7 @@ let viewGuestsBtn;
 
 // Floor plan drag and drop elements
 let toggleLockBtn, lockStatusText, editModeIndicator;
+let tableScaleSlider, tableScaleValue;
 
 // Drag and drop state
 let isFloorPlanLocked = true;
@@ -33,6 +35,9 @@ let draggedTable = null;
 let dragStartX = 0;
 let dragStartY = 0;
 let tableOffset = { x: 0, y: 0 };
+
+// Table scale factor (percentage converted to decimal)
+let tableScaleFactor = 1.0;
 
 // Add new state variables to track table placement
 let placedTables = new Set(); // IDs of tables placed on floor plan
@@ -95,6 +100,8 @@ function checkDOMElements() {
   toggleLockBtn = document.getElementById('toggle-lock-btn');
   lockStatusText = document.getElementById('lock-status-text');
   editModeIndicator = document.getElementById('edit-mode-indicator');
+  tableScaleSlider = document.getElementById('table-scale-slider');
+  tableScaleValue = document.getElementById('table-scale-value');
   
   // Admin elements
   addTableBtn = document.getElementById('add-table-btn');
@@ -153,6 +160,8 @@ function checkDOMElements() {
     { name: 'toggleLockBtn', element: toggleLockBtn },
     { name: 'lockStatusText', element: lockStatusText },
     { name: 'editModeIndicator', element: editModeIndicator },
+    { name: 'tableScaleSlider', element: tableScaleSlider },
+    { name: 'tableScaleValue', element: tableScaleValue },
     { name: 'addTableBtn', element: addTableBtn },
     { name: 'editTablesBtn', element: editTablesBtn },
     { name: 'clearEventNameCheckbox', element: clearEventNameCheckbox },
@@ -265,6 +274,14 @@ function addEventListeners() {
     console.error('Toggle lock button not found');
   }
   
+  // Table scale slider
+  if (tableScaleSlider) {
+    console.log('Adding event listener for table scale slider');
+    tableScaleSlider.addEventListener('input', handleTableScaleChange);
+  } else {
+    console.error('Table scale slider not found');
+  }
+  
   // Add event listener for event date changes
   if (eventDateInput) {
     eventDateInput.addEventListener('change', () => {
@@ -358,6 +375,8 @@ function switchMode(mode) {
   // Update UI based on mode
   if (mode === 'floor') {
     renderFloorPlan();
+    // Make sure table scale is applied
+    updateTableScale();
   }
 }
 
@@ -372,6 +391,12 @@ function updateUI() {
   if (eventDateInput) {
     eventDateInput.value = currentEvent.date || '';
   }
+  
+  // Update table scale
+  const savedScale = currentEvent.tableScale || 100;
+  tableScaleSlider.value = savedScale;
+  tableScaleValue.textContent = `${savedScale}%`;
+  tableScaleFactor = savedScale / 100;
   
   // Update logo
   updateLogoDisplay();
@@ -632,6 +657,9 @@ function renderFloorPlan() {
     tableEl.className = 'available-table';
     tableEl.dataset.tableId = table.id;
     
+    // Apply scale factor
+    tableEl.style.transform = `scale(${tableScaleFactor})`;
+    
     tableEl.innerHTML = `
       <div class="table-name">${table.name}</div>
       <div class="table-count">${tableGuests.length} guests</div>
@@ -717,8 +745,8 @@ function renderTableOnGrid(table) {
   tableEl.style.left = `${table.xPercent}%`;
   tableEl.style.top = `${table.yPercent}%`;
   
-  // Adjust for centering (half of table width/height)
-  tableEl.style.transform = 'translate(-50%, -50%)';
+  // Apply scale factor along with centering transform
+  tableEl.style.transform = `translate(-50%, -50%) scale(${tableScaleFactor})`;
   
   // Add draggable class if plan is unlocked
   if (!isFloorPlanLocked) {
@@ -811,6 +839,40 @@ function handleMouseUp(e) {
   
   // Reset drag state
   draggedTable = null;
+}
+
+// Handle table scale slider change
+function handleTableScaleChange() {
+  // Get the scale value from the slider (50-100)
+  const scalePercent = parseInt(tableScaleSlider.value);
+  
+  // Update the display
+  tableScaleValue.textContent = `${scalePercent}%`;
+  
+  // Update the scale factor (convert percentage to decimal)
+  tableScaleFactor = scalePercent / 100;
+  
+  // Save in the event data
+  currentEvent.tableScale = scalePercent;
+  
+  // Re-render tables with the new scale
+  updateTableScale();
+}
+
+// Update all tables with the current scale
+function updateTableScale() {
+  // Apply scale to all table objects on the grid
+  const tableObjects = document.querySelectorAll('.table-object');
+  tableObjects.forEach(table => {
+    // Combine translate for centering with scale
+    table.style.transform = `translate(-50%, -50%) scale(${tableScaleFactor})`;
+  });
+  
+  // Also update available tables for consistency
+  const availableTables = document.querySelectorAll('.available-table');
+  availableTables.forEach(table => {
+    table.style.transform = `scale(${tableScaleFactor})`;
+  });
 }
 
 // Import CSV
