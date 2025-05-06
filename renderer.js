@@ -11,6 +11,10 @@ let currentEvent = {
   guests: []
 };
 
+// Add admin authentication state tracking
+let lastAdminAuth = null; // Timestamp when admin was last authenticated
+const ADMIN_GRACE_PERIOD = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 // DOM Elements
 let searchModeBtn, adminModeBtn;
 let guestManagementBtn, floorPlanBtn;
@@ -323,8 +327,12 @@ function addEventListeners() {
 function switchMode(mode) {
   // For Admin mode, check password first
   if (mode === 'admin') {
-    // Only prompt for password if not already in admin mode
-    if (!adminSection.classList.contains('active')) {
+    // Check if we're within the grace period
+    const currentTime = Date.now();
+    const isGracePeriodActive = lastAdminAuth && (currentTime - lastAdminAuth < ADMIN_GRACE_PERIOD);
+    
+    // Only prompt for password if not already in admin mode and not in grace period
+    if (!adminSection.classList.contains('active') && !isGracePeriodActive) {
       showAdminPasswordPrompt();
       return; // Stop here, actual switch will happen after password check
     }
@@ -364,6 +372,17 @@ function switchAdminSubTab(tab) {
 
 // Show admin password prompt
 function showAdminPasswordPrompt() {
+  // Check if grace period is active
+  const currentTime = Date.now();
+  const isGracePeriodActive = lastAdminAuth && (currentTime - lastAdminAuth < ADMIN_GRACE_PERIOD);
+  
+  // If grace period is active, switch directly to admin mode
+  if (isGracePeriodActive) {
+    switchMode('admin');
+    return;
+  }
+  
+  // Otherwise show the password prompt
   modalTitle.textContent = 'Admin Access';
   modalContent.innerHTML = `
     <div class="form-group">
@@ -415,6 +434,9 @@ function checkAdminPassword() {
   const correctPassword = 'admin123';
   
   if (enteredPassword === correctPassword) {
+    // Update the last authentication time
+    lastAdminAuth = Date.now();
+    
     closeModal();
     // Complete the switch to admin mode
     searchModeBtn.classList.remove('active');
