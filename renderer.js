@@ -527,8 +527,35 @@ function renderTablesOverview() {
     return;
   }
   
-  // Create table cards in a horizontal layout
-  currentEvent.tables.forEach(table => {
+  // Calculate pagination
+  const tablesPerPage = 10; // Show 10 tables per page (2 rows of 5)
+  
+  // Initialize pagination state if it doesn't exist
+  if (!window.paginationState) {
+    window.paginationState = {
+      currentPage: 0,
+      totalPages: Math.ceil(currentEvent.tables.length / tablesPerPage)
+    };
+  } else {
+    // Update total pages in case tables have been added/removed
+    window.paginationState.totalPages = Math.ceil(currentEvent.tables.length / tablesPerPage);
+    // Make sure current page is valid
+    if (window.paginationState.currentPage >= window.paginationState.totalPages) {
+      window.paginationState.currentPage = 0; // Reset to first page if current page is no longer valid
+    }
+  }
+  
+  // Get current page data
+  const startIndex = window.paginationState.currentPage * tablesPerPage;
+  const endIndex = Math.min(startIndex + tablesPerPage, currentEvent.tables.length);
+  const currentPageTables = currentEvent.tables.slice(startIndex, endIndex);
+  
+  // Create grid container for table cards
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'table-grid-container';
+  
+  // Create table cards in a grid layout
+  currentPageTables.forEach(table => {
     // Get guests at this table
     const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
     
@@ -539,30 +566,39 @@ function renderTablesOverview() {
     // Create table card header
     const tableCardHeader = document.createElement('div');
     tableCardHeader.className = 'table-card-header';
+    
+    // Add close button in the corner
+    const closeBtn = document.createElement('span');
+    closeBtn.className = 'table-card-close';
+    closeBtn.innerHTML = '×';
+    closeBtn.title = 'Close';
+    
     tableCardHeader.innerHTML = `
       <div class="table-card-title">${table.name}</div>
-      <div class="table-card-count">${tableGuests.length}</div>
     `;
+    tableCardHeader.appendChild(closeBtn);
     
     // Create guest list
     const guestList = document.createElement('ul');
     guestList.className = 'table-card-guests';
     
-    // Add guests to list (limit to 5 for display)
-    const displayGuests = tableGuests.slice(0, 5);
-    displayGuests.forEach(guest => {
+    // Add guests to list (show all guests)
+    tableGuests.forEach(guest => {
       const guestItem = document.createElement('li');
       guestItem.className = 'table-card-guest';
-      guestItem.textContent = guest.name;
+      guestItem.innerHTML = `
+        <strong>${guest.name}</strong><br>
+        <span class="guest-role">${guest.role || ''}</span>
+      `;
       guestList.appendChild(guestItem);
     });
     
-    // If more than 5 guests, add a "more" indicator
-    if (tableGuests.length > 5) {
-      const moreItem = document.createElement('li');
-      moreItem.className = 'table-card-guest';
-      moreItem.textContent = `+ ${tableGuests.length - 5} more`;
-      guestList.appendChild(moreItem);
+    // If no guests, show message
+    if (tableGuests.length === 0) {
+      const noGuestsItem = document.createElement('li');
+      noGuestsItem.className = 'table-card-guest no-guests';
+      noGuestsItem.textContent = 'No guests assigned';
+      guestList.appendChild(noGuestsItem);
     }
     
     // Assemble table card
@@ -570,15 +606,82 @@ function renderTablesOverview() {
     tableCard.appendChild(guestList);
     
     // Add click handler to show table details
-    tableCard.addEventListener('click', () => {
+    tableCard.addEventListener('click', (e) => {
+      // Don't trigger if clicking the close button
+      if (e.target.classList.contains('table-card-close')) {
+        return;
+      }
+      
       if (tableGuests.length > 0) {
         showTableView(tableGuests[0]);
       }
     });
     
-    // Add to container
-    tablesOverviewContainer.appendChild(tableCard);
+    // Add click handler for close button
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tableCard.classList.add('removed');
+      
+      // Animate removal
+      setTimeout(() => {
+        gridContainer.removeChild(tableCard);
+        
+        // Check if we need to go to previous page
+        if (gridContainer.children.length === 0 && window.paginationState.currentPage > 0) {
+          window.paginationState.currentPage--;
+          renderTablesOverview();
+        }
+      }, 300);
+    });
+    
+    // Add to grid container
+    gridContainer.appendChild(tableCard);
   });
+  
+  // Create pagination controls
+  const paginationControls = document.createElement('div');
+  paginationControls.className = 'pagination-controls';
+  
+  const prevButton = document.createElement('button');
+  prevButton.className = 'pagination-btn prev-btn';
+  prevButton.innerHTML = '&larr; Previous';
+  prevButton.addEventListener('click', () => {
+    if (window.paginationState.currentPage > 0) {
+      window.paginationState.currentPage--;
+    } else {
+      // Loop to the last page
+      window.paginationState.currentPage = window.paginationState.totalPages - 1;
+    }
+    renderTablesOverview();
+  });
+  
+  const nextButton = document.createElement('button');
+  nextButton.className = 'pagination-btn next-btn';
+  nextButton.innerHTML = 'Next &rarr;';
+  nextButton.addEventListener('click', () => {
+    if (window.paginationState.currentPage < window.paginationState.totalPages - 1) {
+      window.paginationState.currentPage++;
+    } else {
+      // Loop back to the first page
+      window.paginationState.currentPage = 0;
+    }
+    renderTablesOverview();
+  });
+  
+  const pageInfo = document.createElement('div');
+  pageInfo.className = 'page-info';
+  pageInfo.textContent = `Page ${window.paginationState.currentPage + 1} of ${window.paginationState.totalPages}`;
+  
+  // Only show pagination controls if there's more than one page
+  if (window.paginationState.totalPages > 1) {
+    paginationControls.appendChild(prevButton);
+    paginationControls.appendChild(pageInfo);
+    paginationControls.appendChild(nextButton);
+  }
+  
+  // Add grid and pagination to container
+  tablesOverviewContainer.appendChild(gridContainer);
+  tablesOverviewContainer.appendChild(paginationControls);
 }
 
 // Letter filter functionality
