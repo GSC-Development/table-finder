@@ -253,149 +253,70 @@ function createAlphabetBar() {
 
 // Add event listeners
 function addEventListeners() {
-  console.log('Adding event listeners');
+  console.log('Adding event listeners...');
   
-  // Tab switching
-  if (searchModeBtn && adminModeBtn) {
-    searchModeBtn.addEventListener('click', () => switchMode('search'));
-    adminModeBtn.addEventListener('click', () => switchMode('admin'));
-  } else {
-    console.error('One or more mode buttons not found');
-  }
+  // Mode switching
+  searchModeBtn.addEventListener('click', () => switchMode('search'));
+  adminModeBtn.addEventListener('click', () => showAdminPasswordPrompt());
   
-  // Admin sub-tab switching
-  if (guestManagementBtn && floorPlanBtn) {
-    guestManagementBtn.addEventListener('click', () => switchAdminSubTab('guest-management'));
-    floorPlanBtn.addEventListener('click', () => switchAdminSubTab('floor-plan'));
-  } else {
-    console.error('One or more admin sub-tab buttons not found');
-  }
+  // Admin sub-navigation
+  guestManagementBtn.addEventListener('click', () => switchAdminSubTab('guest-management'));
+  floorPlanBtn.addEventListener('click', () => switchAdminSubTab('floor-plan'));
   
-  // Modal controls
-  if (modalClose) {
-    modalClose.addEventListener('click', closeModal);
-  } else {
-    console.error('Modal close button not found');
-  }
+  // Admin actions
+  clearAllDataBtn.addEventListener('click', clearAllData);
+  processPastedDataBtn.addEventListener('click', processPastedData);
+  saveEventNameBtn.addEventListener('click', saveEventName);
   
-  // Process pasted data
-  if (processPastedDataBtn) {
-    console.log('Adding event listener for process pasted data button');
-    processPastedDataBtn.addEventListener('click', processPastedData);
-  } else {
-    console.error('Process pasted data button not found');
-  }
+  // Search functionality - use performSearch instead of handleSearch
+  searchInput.addEventListener('input', performSearch);
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    }
+  });
   
-  // Event name
-  if (saveEventNameBtn) {
-    console.log('Adding event listener for save event name button');
-    saveEventNameBtn.addEventListener('click', saveEventName);
-  } else {
-    console.error('Save event name button not found');
-  }
+  // Tables management
+  addTableBtn.addEventListener('click', showAddTableModal);
+  editTablesBtn.addEventListener('click', showEditTablesModal);
   
-  // Floor plan lock/unlock
-  if (toggleLockBtn) {
-    console.log('Adding event listener for floor plan lock toggle');
-    toggleLockBtn.addEventListener('click', toggleFloorPlanLock);
-  } else {
-    console.error('Toggle lock button not found');
-  }
-  
-  // Table scale slider
-  if (tableScaleSlider) {
-    console.log('Adding event listener for table scale slider');
-    tableScaleSlider.addEventListener('input', handleTableScaleChange);
-  } else {
-    console.error('Table scale slider not found');
-  }
-  
-  // Add event listener for event date changes
-  if (eventDateInput) {
-    eventDateInput.addEventListener('change', () => {
-      // Update date when changed (but don't save automatically to avoid confusion)
-      currentEvent.date = eventDateInput.value;
-    });
-  }
+  // Floor plan interaction
+  toggleLockBtn.addEventListener('click', toggleFloorPlanLock);
+  tableScaleSlider.addEventListener('input', handleTableScaleChange);
   
   // Logo upload
-  if (logoDropArea && logoFileInput && logoSelectBtn && removeLogoBtn) {
-    console.log('Adding event listeners for logo upload');
-    logoDropArea.addEventListener('dragover', handleDragOver);
-    logoDropArea.addEventListener('dragleave', handleDragLeave);
-    logoDropArea.addEventListener('drop', handleDrop);
-    logoSelectBtn.addEventListener('click', () => logoFileInput.click());
-    logoFileInput.addEventListener('change', handleFileSelect);
-    removeLogoBtn.addEventListener('click', removeLogo);
-  } else {
-    console.error('One or more logo elements not found');
-  }
+  logoDropArea.addEventListener('dragover', handleDragOver);
+  logoDropArea.addEventListener('dragleave', handleDragLeave);
+  logoDropArea.addEventListener('drop', handleDrop);
+  logoSelectBtn.addEventListener('click', () => logoFileInput.click());
+  logoFileInput.addEventListener('change', handleFileSelect);
+  removeLogoBtn.addEventListener('click', removeLogo);
   
-  // Table management
-  if (addTableBtn) {
-    console.log('Adding event listener for add table button');
-    addTableBtn.addEventListener('click', showAddTableModal);
-  } else {
-    console.error('Add table button not found');
-  }
+  // Guest management
+  viewGuestsBtn.addEventListener('click', showGuestManagementModal);
   
-  if (editTablesBtn) {
-    console.log('Adding event listener for edit tables button');
-    editTablesBtn.addEventListener('click', showEditTablesModal);
-  } else {
-    console.error('Edit tables button not found');
-  }
+  // Modal close button
+  modalClose.addEventListener('click', closeModal);
   
-  // Guest Management
-  if (viewGuestsBtn) {
-    console.log('Adding event listener for view guests button');
-    viewGuestsBtn.addEventListener('click', showGuestManagementModal);
-  } else {
-    console.error('View guests button not found');
-  }
+  // Floor plan image upload
+  uploadFloorPlanBtn.addEventListener('click', showFloorImageModal);
+  removeFloorImageBtn.addEventListener('click', removeFloorPlanImage);
   
-  // Search input
-  if (searchInput) {
-    console.log('Adding event listener for search input');
-    searchInput.addEventListener('input', handleSearch);
-  } else {
-    console.error('Search input not found');
-  }
+  // Floor plan image modal
+  floorImageModalClose.addEventListener('click', hideFloorImageModal);
+  cancelFloorImageBtn.addEventListener('click', hideFloorImageModal);
+  confirmFloorImageBtn.addEventListener('click', confirmFloorImage);
+  floorImageDropArea.addEventListener('dragover', handleFloorImageDragOver);
+  floorImageDropArea.addEventListener('dragleave', handleFloorImageDragLeave);
+  floorImageDropArea.addEventListener('drop', handleFloorImageDrop);
+  floorImageSelectBtn.addEventListener('click', () => floorImageFileInput.click());
+  floorImageFileInput.addEventListener('change', handleFloorImageSelect);
   
-  // Clear all data
-  if (clearAllDataBtn) {
-    console.log('Adding event listener for clear all data button');
-    clearAllDataBtn.addEventListener('click', clearAllData);
-  } else {
-    console.error('Clear all data button not found');
-  }
-
   // Add document event listeners for drag and drop
   document.addEventListener('mousemove', handleMouseMove);
   document.addEventListener('mouseup', handleMouseUp);
-
-  // Floor plan image upload
-  if (floorImageDropArea && floorImageFileInput && floorImageSelectBtn && removeFloorImageBtn) {
-    console.log('Adding event listeners for floor plan image upload');
-    floorImageDropArea.addEventListener('dragover', handleFloorImageDragOver);
-    floorImageDropArea.addEventListener('dragleave', handleFloorImageDragLeave);
-    floorImageDropArea.addEventListener('drop', handleFloorImageDrop);
-    floorImageSelectBtn.addEventListener('click', () => floorImageFileInput.click());
-    floorImageFileInput.addEventListener('change', handleFloorImageSelect);
-    removeFloorImageBtn.addEventListener('click', removeFloorPlanImage);
-  } else {
-    console.error('One or more floor plan image elements not found');
-  }
   
-  // Floor plan image modal
-  if (uploadFloorPlanBtn && floorImageModalClose && confirmFloorImageBtn && cancelFloorImageBtn) {
-    uploadFloorPlanBtn.addEventListener('click', showFloorImageModal);
-    floorImageModalClose.addEventListener('click', hideFloorImageModal);
-    confirmFloorImageBtn.addEventListener('click', confirmFloorImage);
-    cancelFloorImageBtn.addEventListener('click', hideFloorImageModal);
-  } else {
-    console.error('One or more floor plan image modal elements not found');
-  }
+  console.log('Event listeners added');
 }
 
 // Switch between modes (search, admin)
@@ -562,6 +483,80 @@ function updateUI() {
   
   // Render floor plan
   renderFloorPlan();
+  
+  // Render tables overview
+  renderTablesOverview();
+}
+
+// Render tables overview in horizontal layout
+function renderTablesOverview() {
+  const tablesOverviewContainer = document.getElementById('tables-overview-container');
+  if (!tablesOverviewContainer) {
+    console.error('Tables overview container not found');
+    return;
+  }
+  
+  // Clear container
+  tablesOverviewContainer.innerHTML = '';
+  
+  // If no tables, show message
+  if (!currentEvent.tables || currentEvent.tables.length === 0) {
+    tablesOverviewContainer.innerHTML = '<div class="no-tables-message">No tables have been created yet.</div>';
+    return;
+  }
+  
+  // Create table cards in a horizontal layout
+  currentEvent.tables.forEach(table => {
+    // Get guests at this table
+    const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
+    
+    // Create table card
+    const tableCard = document.createElement('div');
+    tableCard.className = 'table-card';
+    
+    // Create table card header
+    const tableCardHeader = document.createElement('div');
+    tableCardHeader.className = 'table-card-header';
+    tableCardHeader.innerHTML = `
+      <div class="table-card-title">${table.name}</div>
+      <div class="table-card-count">${tableGuests.length}</div>
+    `;
+    
+    // Create guest list
+    const guestList = document.createElement('ul');
+    guestList.className = 'table-card-guests';
+    
+    // Add guests to list (limit to 5 for display)
+    const displayGuests = tableGuests.slice(0, 5);
+    displayGuests.forEach(guest => {
+      const guestItem = document.createElement('li');
+      guestItem.className = 'table-card-guest';
+      guestItem.textContent = guest.name;
+      guestList.appendChild(guestItem);
+    });
+    
+    // If more than 5 guests, add a "more" indicator
+    if (tableGuests.length > 5) {
+      const moreItem = document.createElement('li');
+      moreItem.className = 'table-card-guest';
+      moreItem.textContent = `+ ${tableGuests.length - 5} more`;
+      guestList.appendChild(moreItem);
+    }
+    
+    // Assemble table card
+    tableCard.appendChild(tableCardHeader);
+    tableCard.appendChild(guestList);
+    
+    // Add click handler to show table details
+    tableCard.addEventListener('click', () => {
+      if (tableGuests.length > 0) {
+        showTableView(tableGuests[0]);
+      }
+    });
+    
+    // Add to container
+    tablesOverviewContainer.appendChild(tableCard);
+  });
 }
 
 // Letter filter functionality
@@ -609,7 +604,7 @@ function clearLetterFilter() {
     searchResults.innerHTML = '';
   } else {
     // Re-run search to refresh layout
-    handleSearch();
+    performSearch();
   }
 }
 
@@ -757,7 +752,7 @@ function showTableView(selectedGuest) {
   backButton.innerHTML = '&#8592; Back to search results';
   backButton.addEventListener('click', () => {
     if (searchInput.value) {
-      handleSearch();
+      performSearch();
     } else {
       searchResults.innerHTML = '';
     }
@@ -1828,17 +1823,12 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize the application
   init();
   
-  // Directly bind search input after DOM is definitely loaded
+  // DO NOT add extra search listeners here, they're already added in addEventListeners()
   const searchInputEl = document.getElementById('search-input');
   if (searchInputEl) {
-    console.log('Binding search input after DOM loaded:', searchInputEl);
+    console.log('Search input found:', searchInputEl);
     
-    // Use multiple event types to ensure we catch the input
-    searchInputEl.addEventListener('input', performSearch);
-    searchInputEl.addEventListener('keyup', performSearch);
-    searchInputEl.addEventListener('change', performSearch);
-    
-    // Add a manual search button next to the search input for testing
+    // Add a manual search button next to the search input for clarity
     const searchContainer = document.querySelector('.search-input-wrapper');
     if (searchContainer) {
       const searchButton = document.createElement('button');
