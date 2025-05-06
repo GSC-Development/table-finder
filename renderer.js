@@ -78,6 +78,10 @@ function init() {
   // Initialize UI
   updateUI();
   
+  // Explicitly call renderTablesOverview with debug
+  console.log('Explicitly calling renderTablesOverview');
+  renderTablesOverview();
+  
   console.log('Application initialized with', currentEvent.guests.length, 'guests');
 }
 
@@ -106,6 +110,10 @@ function checkDOMElements() {
   console.log('Search Input Element:', searchInput);
   console.log('Search Results Element:', searchResults);
   
+  // Tables overview container - add explicit check
+  const tablesOverviewContainer = document.getElementById('tables-overview-container');
+  console.log('Tables Overview Container:', tablesOverviewContainer);
+  
   // Floor plan elements
   floorTitle = document.getElementById('floor-title');
   floorPlan = document.getElementById('floor-plan');
@@ -116,6 +124,15 @@ function checkDOMElements() {
   editModeIndicator = document.getElementById('edit-mode-indicator');
   tableScaleSlider = document.getElementById('table-scale-slider');
   tableScaleValue = document.getElementById('table-scale-value');
+  
+  // Add floor-title if it doesn't exist in the DOM but is referenced in the code
+  if (!floorTitle) {
+    console.warn('floor-title element not found, creating it for internal use');
+    floorTitle = document.createElement('div');
+    floorTitle.id = 'floor-title';
+    floorTitle.style.display = 'none';
+    document.body.appendChild(floorTitle);
+  }
   
   // Admin elements
   addTableBtn = document.getElementById('add-table-btn');
@@ -176,13 +193,11 @@ function checkDOMElements() {
     { name: 'searchInput', element: searchInput },
     { name: 'alphabetBar', element: alphabetBar },
     { name: 'searchResults', element: searchResults },
-    { name: 'floorTitle', element: floorTitle },
     { name: 'floorPlan', element: floorPlan },
     { name: 'floorGrid', element: floorGrid },
     { name: 'availableTablesContainer', element: availableTablesContainer },
     { name: 'toggleLockBtn', element: toggleLockBtn },
     { name: 'lockStatusText', element: lockStatusText },
-    { name: 'editModeIndicator', element: editModeIndicator },
     { name: 'tableScaleSlider', element: tableScaleSlider },
     { name: 'tableScaleValue', element: tableScaleValue },
     { name: 'addTableBtn', element: addTableBtn },
@@ -479,10 +494,18 @@ function checkAdminPassword() {
 
 // Update all UI elements
 function updateUI() {
+  console.log('Starting updateUI function');
+  
   // Update event name in header (use "SeatPlan" if empty)
   appTitle.textContent = currentEvent.name || 'SeatPlan';
   eventNameInput.value = currentEvent.name;
-  floorTitle.textContent = `${currentEvent.name || 'SeatPlan'} - Floor Plan`;
+  
+  // Check if floorTitle exists before trying to update it
+  if (floorTitle) {
+    floorTitle.textContent = `${currentEvent.name || 'SeatPlan'} - Floor Plan`;
+  } else {
+    console.warn('floorTitle element not found, skipping update');
+  }
   
   // Update event date if it exists
   if (eventDateInput) {
@@ -507,25 +530,35 @@ function updateUI() {
   renderFloorPlan();
   
   // Render tables overview
+  console.log('Calling renderTablesOverview from updateUI');
   renderTablesOverview();
+  
+  console.log('Finished updateUI');
 }
 
-// Render tables overview in horizontal layout
+// Render tables overview in grid layout with pagination
 function renderTablesOverview() {
+  console.log('Starting renderTablesOverview function');
+  
   const tablesOverviewContainer = document.getElementById('tables-overview-container');
   if (!tablesOverviewContainer) {
     console.error('Tables overview container not found');
     return;
   }
   
+  console.log('Tables container found');
+  
   // Clear container
   tablesOverviewContainer.innerHTML = '';
   
   // If no tables, show message
   if (!currentEvent.tables || currentEvent.tables.length === 0) {
+    console.log('No tables found in current event');
     tablesOverviewContainer.innerHTML = '<div class="no-tables-message">No tables have been created yet.</div>';
     return;
   }
+  
+  console.log(`Found ${currentEvent.tables.length} tables to display`);
   
   // Calculate pagination
   const tablesPerPage = 10; // Show 10 tables per page (2 rows of 5)
@@ -545,10 +578,14 @@ function renderTablesOverview() {
     }
   }
   
+  console.log(`Pagination: Page ${window.paginationState.currentPage + 1} of ${window.paginationState.totalPages}`);
+  
   // Get current page data
   const startIndex = window.paginationState.currentPage * tablesPerPage;
   const endIndex = Math.min(startIndex + tablesPerPage, currentEvent.tables.length);
   const currentPageTables = currentEvent.tables.slice(startIndex, endIndex);
+  
+  console.log(`Displaying tables ${startIndex + 1} to ${endIndex} (${currentPageTables.length} tables)`);
   
   // Create grid container for table cards
   const gridContainer = document.createElement('div');
@@ -682,6 +719,8 @@ function renderTablesOverview() {
   // Add grid and pagination to container
   tablesOverviewContainer.appendChild(gridContainer);
   tablesOverviewContainer.appendChild(paginationControls);
+  
+  console.log('Finished rendering tables overview');
 }
 
 // Letter filter functionality

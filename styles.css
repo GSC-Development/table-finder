@@ -1206,6 +1206,13 @@
     gap: 0.5rem;
   }
   
+  .floor-plan-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0 1rem 0 0;
+  }
+  
   /* Admin section header */
   .admin-header {
     max-width: 1600px;
