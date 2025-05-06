@@ -604,16 +604,11 @@ function renderTablesOverview() {
     const tableCardHeader = document.createElement('div');
     tableCardHeader.className = 'table-card-header';
     
-    // Add close button in the corner
-    const closeBtn = document.createElement('span');
-    closeBtn.className = 'table-card-close';
-    closeBtn.innerHTML = '×';
-    closeBtn.title = 'Close';
+    // Note: Removed the close button for view-only mode
     
     tableCardHeader.innerHTML = `
       <div class="table-card-title">${table.name}</div>
     `;
-    tableCardHeader.appendChild(closeBtn);
     
     // Create guest list
     const guestList = document.createElement('ul');
@@ -643,32 +638,10 @@ function renderTablesOverview() {
     tableCard.appendChild(guestList);
     
     // Add click handler to show table details
-    tableCard.addEventListener('click', (e) => {
-      // Don't trigger if clicking the close button
-      if (e.target.classList.contains('table-card-close')) {
-        return;
-      }
-      
+    tableCard.addEventListener('click', () => {
       if (tableGuests.length > 0) {
         showTableView(tableGuests[0]);
       }
-    });
-    
-    // Add click handler for close button
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      tableCard.classList.add('removed');
-      
-      // Animate removal
-      setTimeout(() => {
-        gridContainer.removeChild(tableCard);
-        
-        // Check if we need to go to previous page
-        if (gridContainer.children.length === 0 && window.paginationState.currentPage > 0) {
-          window.paginationState.currentPage--;
-          renderTablesOverview();
-        }
-      }, 300);
     });
     
     // Add to grid container
@@ -875,7 +848,15 @@ function showTableView(selectedGuest) {
   const table = currentEvent.tables.find(t => t.id === selectedGuest.tableId);
   const tableGuests = currentEvent.guests.filter(g => g.tableId === selectedGuest.tableId);
   
-  searchResults.innerHTML = '';
+  // Get references to important elements
+  const searchResultsEl = document.getElementById('search-results');
+  const tablesOverviewEl = document.querySelector('.tables-overview');
+  
+  // Hide tables overview when showing table view
+  if (tablesOverviewEl) tablesOverviewEl.style.display = 'none';
+  
+  // Clear search results
+  searchResultsEl.innerHTML = '';
   
   // Add table info header
   const tableInfo = document.createElement('div');
@@ -884,7 +865,7 @@ function showTableView(selectedGuest) {
     <div class="table-title">${table ? table.name : 'Unknown Table'}</div>
     <div class="table-subtitle">Showing all guests seated with ${selectedGuest.name}</div>
   `;
-  searchResults.appendChild(tableInfo);
+  searchResultsEl.appendChild(tableInfo);
   
   // Create a container for guest cards with grid layout
   const guestContainer = document.createElement('div');
@@ -908,7 +889,7 @@ function showTableView(selectedGuest) {
     guestContainer.appendChild(card);
   });
   
-  searchResults.appendChild(guestContainer);
+  searchResultsEl.appendChild(guestContainer);
   
   // Add back button
   const backButton = document.createElement('button');
@@ -918,10 +899,11 @@ function showTableView(selectedGuest) {
     if (searchInput.value) {
       performSearch();
     } else {
-      searchResults.innerHTML = '';
+      searchResultsEl.innerHTML = '';
+      if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
     }
   });
-  searchResults.appendChild(backButton);
+  searchResultsEl.appendChild(backButton);
   
   // Highlight table in floor plan
   if (floorPlanContent.classList.contains('active')) {
@@ -2012,6 +1994,7 @@ function performSearch() {
   console.log('performSearch called');
   const searchInputEl = document.getElementById('search-input');
   const searchResultsEl = document.getElementById('search-results');
+  const tablesOverviewEl = document.querySelector('.tables-overview');
   
   if (!searchInputEl || !searchResultsEl) {
     console.error('Search elements not found:', {searchInputEl, searchResultsEl});
@@ -2026,11 +2009,15 @@ function performSearch() {
   const letterButtons = document.querySelectorAll('.letter-button');
   letterButtons.forEach(btn => btn.classList.remove('active'));
   
-  // If empty search, clear results
+  // If empty search, clear results and show tables overview
   if (!searchText) {
     searchResultsEl.innerHTML = '';
+    if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
     return;
   }
+  
+  // Hide tables overview when showing search results
+  if (tablesOverviewEl) tablesOverviewEl.style.display = 'none';
   
   // Check if we have guest data
   if (!currentEvent.guests || !Array.isArray(currentEvent.guests) || currentEvent.guests.length === 0) {
