@@ -582,8 +582,8 @@ function renderTablesOverview() {
   
   console.log(`Found ${currentEvent.tables.length} tables to display`);
   
-  // Calculate pagination - now showing 1 table per page
-  const tablesPerPage = 1; // Changed from 10 to 1 table per page for single row layout
+  // Calculate pagination - showing 5 tables per page in a single row
+  const tablesPerPage = 5; // Changed to 5 tables per page
   
   // Initialize pagination state if it doesn't exist
   if (!window.paginationState) {
@@ -609,20 +609,18 @@ function renderTablesOverview() {
   
   console.log(`Displaying tables ${startIndex + 1} to ${endIndex} (${currentPageTables.length} tables)`);
   
-  // Create container for table card - single table view
+  // Create container for table cards - single row grid layout
   const tableContainer = document.createElement('div');
-  tableContainer.className = 'single-table-container';
+  tableContainer.className = 'table-row-container';
   
-  // Create table card for the current table
-  if (currentPageTables.length > 0) {
-    const table = currentPageTables[0];
-    
+  // Create table cards for each table on the current page
+  currentPageTables.forEach(table => {
     // Get guests at this table
     const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
     
     // Create table card
     const tableCard = document.createElement('div');
-    tableCard.className = 'table-card single-table';
+    tableCard.className = 'table-card table-row-card';
     
     // Create table card header
     const tableCardHeader = document.createElement('div');
@@ -668,7 +666,7 @@ function renderTablesOverview() {
     
     // Add to container
     tableContainer.appendChild(tableCard);
-  }
+  });
   
   // Create pagination controls
   const paginationControls = document.createElement('div');
@@ -696,7 +694,7 @@ function renderTablesOverview() {
   
   const pageInfo = document.createElement('div');
   pageInfo.className = 'page-info';
-  pageInfo.textContent = `Table ${window.paginationState.currentPage + 1} of ${window.paginationState.totalPages}`;
+  pageInfo.textContent = `Page ${window.paginationState.currentPage + 1} of ${window.paginationState.totalPages}`;
   
   // Only show pagination controls if there's more than one page
   if (window.paginationState.totalPages > 1) {

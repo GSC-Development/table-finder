@@ -1674,3 +1674,43 @@
     min-width: 120px;
     text-align: center;
   }
+
+  /* Table row layout styles */
+  .table-row-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin: 20px auto;
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .table-card.table-row-card {
+    flex: 1;
+    min-width: 220px;
+    max-width: calc(20% - 12px);
+    margin: 0;
+    height: 400px;
+    min-height: 400px;
+    max-height: 400px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .table-card.table-row-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  .table-card.table-row-card .table-card-guests {
+    max-height: 340px;
+    overflow-y: auto;
+  }
+
+  .table-card.table-row-card .table-card-title {
+    font-size: 1.2rem;
+    text-align: center;
+    padding: 8px 0;
+  }
