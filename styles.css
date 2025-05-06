@@ -533,199 +533,204 @@
   .floor-plan-layout {
     display: flex;
     gap: 1rem;
-    height: calc(100vh - 180px);
+    height: calc(100vh - 220px);
+    background-color: #f5f7fa;
+    margin: -1.5rem;
+    padding: 1.5rem;
   }
   
   /* Side panel for available tables */
   .floor-plan-panel {
-    width: 220px;
+    width: 300px;
     flex-shrink: 0;
     background-color: #fff;
-    border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
-    padding: 1rem;
     overflow-y: auto;
-    border-bottom: 3px solid #1e40af;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
   
-  .panel-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e40af;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
+  .floor-panel-header {
+    padding: 1.25rem;
     border-bottom: 1px solid #e2e8f0;
   }
   
+  .table-management-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .panel-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-bottom: 0;
+  }
+  
+  /* Available tables grid */
   .available-tables {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1.25rem;
   }
   
   /* Available table item */
   .available-table {
     background-color: #f8fafc;
-    border: 2px solid #94a3b8;
+    border: 1px solid #e2e8f0;
     border-radius: 50%;
     width: 80px;
     height: 80px;
-    margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: grab;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s ease;
-    transform-origin: center center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    margin: 0 auto;
   }
   
   .available-table:hover {
-    background-color: #eff6ff;
-    border-color: #3b82f6;
+    background-color: #f1f5f9;
+    border-color: #94a3b8;
     transform: scale(1.05);
+  }
+  
+  .table-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    color: #334155;
+  }
+  
+  .table-count {
+    font-size: 0.8rem;
+    color: #64748b;
   }
   
   /* Main floor plan container */
   .floor-plan-container {
     flex: 1;
-    overflow: hidden;
-    position: relative;
-  }
-  
-  .floor-plan {
-    width: 100%;
-    height: 100%;
     background-color: #fff;
-    border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
-    position: relative;
     overflow: hidden;
-    border-bottom: 3px solid #1e40af;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
   
-  /* Floor grid with 16:9 aspect ratio */
+  .floor-plan-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  
+  .floor-plan-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .floor-controls-right {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+  
+  /* Table scale control */
+  .table-scale-control {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    color: #64748b;
+  }
+  
+  input[type="range"].slider {
+    width: 120px;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #e2e8f0;
+    outline: none;
+    border-radius: 3px;
+  }
+  
+  input[type="range"].slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  #table-scale-value {
+    font-size: 0.85rem;
+    color: #64748b;
+    min-width: 40px;
+  }
+  
+  /* Lock button */
+  .lock-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background-color: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #64748b;
+    font-weight: 500;
+  }
+  
+  .lock-btn .icon {
+    width: 1rem;
+    height: 1rem;
+  }
+  
+  /* Edit mode indicator */
+  .edit-mode-indicator {
+    background-color: #fef3c7;
+    display: inline-flex;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #b45309;
+    margin-top: 1rem;
+  }
+  
+  /* Floor plan area */
+  .floor-plan {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+  
   .floor-grid {
     width: 100%;
-    height: 0;
-    padding-bottom: 56.25%; /* 16:9 aspect ratio */
-    position: relative;
+    height: 100%;
     background-image: linear-gradient(rgba(226, 232, 240, 0.3) 1px, transparent 1px),
                       linear-gradient(90deg, rgba(226, 232, 240, 0.3) 1px, transparent 1px);
     background-size: 50px 50px;
     background-color: #ffffff;
-    margin: 0 auto;
   }
   
-  /* Floor grid with background image */
-  .floor-grid.has-bg-image {
-    background-image: none; /* Remove grid lines when there's a background image */
-  }
-  
-  .floor-grid-bg-image {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    opacity: 0.8; /* Slightly transparent to make tables more visible */
-    z-index: 0;
-  }
-  
-  /* Table object styling */
-  .table-object {
-    position: absolute;
-    background-color: #f8fafc;
-    border: 2px solid #94a3b8;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    width: 80px;
-    height: 80px;
-    z-index: 1;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    /* Center positioning with translate - will be combined with scale in JS */
-    transform: translate(-50%, -50%);
-    transform-origin: center center;
-  }
-  
-  .table-object:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
-  }
-  
-  .table-object > div {
-    width: 100%;
-    padding: 5px;
-  }
-  
-  .table-object.highlight {
+  /* Primary button */
+  .btn.primary {
+    background-color: #3b82f6;
     border-color: #3b82f6;
-    background-color: #eff6ff;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-    z-index: 2;
-  }
-  
-  /* Remove button for tables */
-  .table-remove-btn {
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 18px;
-    height: 18px;
-    background-color: #94a3b8;
     color: white;
-    border-radius: 50%;
-    border: 1px solid white;
-    font-size: 14px;
-    line-height: 1;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    z-index: 3;
-    padding: 0;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   }
   
-  .table-object:hover .table-remove-btn {
-    opacity: 1;
-  }
-  
-  .table-remove-btn:hover {
-    background-color: #64748b;
-  }
-  
-  /* Draggable table styling */
-  .table-object.draggable {
-    cursor: grab;
-  }
-  
-  .table-object.dragging {
-    cursor: grabbing;
-    opacity: 0.8;
-    transform: scale(1.1);
-    z-index: 10;
-  }
-  
-  .table-name {
-    font-weight: 500;
-    font-size: 0.8rem;
-    margin-bottom: 0.15rem;
-  }
-  
-  .table-count {
-    font-size: 0.7rem;
-    color: #64748b;
+  .btn.primary:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
   }
   
   /* Admin panel */
@@ -813,16 +818,6 @@
   
   .btn:hover {
     background-color: #e2e8f0;
-  }
-  
-  .btn.primary {
-    background-color: #3b82f6;
-    border-color: #2563eb;
-    color: white;
-  }
-  
-  .btn.primary:hover {
-    background-color: #2563eb;
   }
   
   .btn.danger {
@@ -1445,4 +1440,108 @@
   .floor-plan-container .floor-plan-header {
     padding: 0.75rem;
     border-bottom: 1px solid #e2e8f0;
+  }
+  
+  /* Grid with background image */
+  .floor-grid.has-bg-image {
+    background-image: none; /* Remove grid lines when there's a background image */
+  }
+  
+  .floor-grid-bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0.8; /* Slightly transparent to make tables more visible */
+    z-index: 0;
+  }
+  
+  /* Table object styling */
+  .table-object {
+    position: absolute;
+    background-color: #f8fafc;
+    border: 1px solid #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    width: 80px;
+    height: 80px;
+    z-index: 1;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Center positioning with translate - will be combined with scale in JS */
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+  }
+  
+  .table-object:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  }
+  
+  .table-object > div {
+    width: 100%;
+    padding: 5px;
+  }
+  
+  .table-object.highlight {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    z-index: 2;
+  }
+  
+  /* Remove button for tables */
+  .table-remove-btn {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 18px;
+    height: 18px;
+    background-color: #94a3b8;
+    color: white;
+    border-radius: 50%;
+    border: 1px solid white;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 3;
+    padding: 0;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+  
+  .table-object:hover .table-remove-btn {
+    opacity: 1;
+  }
+  
+  .table-remove-btn:hover {
+    background-color: #64748b;
+  }
+  
+  /* Draggable table styling */
+  .table-object.draggable {
+    cursor: grab;
+  }
+  
+  .table-object.dragging {
+    cursor: grabbing;
+    opacity: 0.8;
+    transform: scale(1.1) translate(-50%, -50%);
+    z-index: 10;
+  }
+  
+  .floor-plan-left-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
