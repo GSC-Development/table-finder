@@ -706,14 +706,18 @@ function handleLetterClick(letter) {
   const activeButton = alphabetBar.querySelector(`.letter-button.active`);
   const isAlreadyActive = activeButton && activeButton.textContent === letter;
   
+  // Access tables overview element
+  const tablesOverviewEl = document.querySelector('.tables-overview');
+  
   // Clear all active states first
   letterButtons.forEach(btn => {
     btn.classList.remove('active');
   });
   
-  // If clicking the same letter, just clear the filter
+  // If clicking the same letter, just clear the filter and show tables
   if (isAlreadyActive) {
     searchResults.innerHTML = '';
+    if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
     return;
   }
   
@@ -723,6 +727,9 @@ function handleLetterClick(letter) {
       btn.classList.add('active');
     }
   });
+  
+  // Hide tables overview when showing letter search results
+  if (tablesOverviewEl) tablesOverviewEl.style.display = 'none';
   
   // Filter guests by letter
   const filteredGuests = currentEvent.guests.filter(guest => 
@@ -737,68 +744,41 @@ function clearLetterFilter() {
   const letterButtons = alphabetBar.querySelectorAll('.letter-button');
   letterButtons.forEach(btn => btn.classList.remove('active'));
   
+  // Get tables overview element
+  const tablesOverviewEl = document.querySelector('.tables-overview');
+  
   if (!searchInput.value) {
     searchResults.innerHTML = '';
+    // Show tables overview if search is empty
+    if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
   } else {
     // Re-run search to refresh layout
     performSearch();
   }
 }
 
-// Handle search - completely rebuilt
-function handleSearch(event) {
-  // Get the search input value directly from the DOM to ensure we're getting the current value
-  const searchInputElement = document.getElementById('search-input');
-  if (!searchInputElement) {
-    console.error('Search input element not found when handling search');
-    return;
-  }
-  
-  const searchText = searchInputElement.value.trim().toLowerCase();
-  console.log('Search triggered with text:', searchText);
-  
-  // Clear letter filter
-  clearLetterFilter();
-  
-  // If empty search, clear results
-  if (!searchText) {
-    searchResults.innerHTML = '';
-    return;
-  }
-  
-  // Get all guests
-  const allGuests = currentEvent.guests;
-  if (!allGuests || allGuests.length === 0) {
-    console.log('No guests found in data');
-    searchResults.innerHTML = '<div class="no-results">No guests available</div>';
-    return;
-  }
-  
-  // Filter guests by name match
-  const filteredGuests = allGuests.filter(guest => 
-    guest.name.toLowerCase().includes(searchText)
-  );
-  
-  console.log(`Found ${filteredGuests.length} matching guests for '${searchText}'`);
-  
-  if (filteredGuests.length === 0) {
-    searchResults.innerHTML = `<div class="no-results">No guests found matching '${searchText}'</div>`;
-    return;
-  }
-  
-  // Render results
-  renderSearchResults(filteredGuests);
-}
-
 // Render search results
 function renderSearchResults(guests) {
-  searchResults.innerHTML = '';
+  // Access the search results and tables overview elements
+  const searchResultsEl = document.getElementById('search-results');
+  const tablesOverviewEl = document.querySelector('.tables-overview');
+  
+  if (!searchResultsEl) {
+    console.error('Search results element not found');
+    return;
+  }
+  
+  // Hide tables overview when showing search results
+  if (tablesOverviewEl) tablesOverviewEl.style.display = 'none';
+  
+  // Clear search results
+  searchResultsEl.innerHTML = '';
   
   if (guests.length === 0) {
     const noResults = document.createElement('div');
     noResults.className = 'no-results';
     noResults.textContent = 'No guests found';
-    searchResults.appendChild(noResults);
+    searchResultsEl.appendChild(noResults);
     return;
   }
   
@@ -815,7 +795,7 @@ function renderSearchResults(guests) {
   // Create a container for guest cards
   const resultsContainer = document.createElement('div');
   resultsContainer.className = isLetterSelection ? 'two-column-results' : 'single-column-results';
-  searchResults.appendChild(resultsContainer);
+  searchResultsEl.appendChild(resultsContainer);
   
   // Show list of guests
   guests.forEach(guest => {
@@ -823,6 +803,19 @@ function renderSearchResults(guests) {
     card.addEventListener('click', () => showTableView(guest));
     resultsContainer.appendChild(card);
   });
+  
+  // Add back button for letter filters
+  if (isLetterSelection) {
+    const backButton = document.createElement('button');
+    backButton.className = 'back-button';
+    backButton.innerHTML = '&#8592; Back to tables';
+    backButton.addEventListener('click', () => {
+      clearLetterFilter();
+      searchResultsEl.innerHTML = '';
+      if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
+    });
+    searchResultsEl.appendChild(backButton);
+  }
 }
 
 // Create guest card
