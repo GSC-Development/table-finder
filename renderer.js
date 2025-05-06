@@ -505,26 +505,32 @@ function checkAdminPassword() {
     // Ensure guest management tab is active by default
     switchAdminSubTab('guest-management');
   } else {
-    // Show error message
-    const errorMsg = document.createElement('div');
-    errorMsg.className = 'password-error';
-    errorMsg.textContent = 'Incorrect password. Please try again.';
-    errorMsg.style.color = '#ef4444';
-    errorMsg.style.marginTop = '0.5rem';
-    errorMsg.style.fontSize = '0.875rem';
-    
-    // Remove any existing error messages first
-    const existingError = document.querySelector('.password-error');
-    if (existingError) {
-      existingError.remove();
+    // Show error message - but only if we're in the password modal
+    if (modalTitle && modalTitle.textContent === 'Admin Access') {
+      // Create error message element
+      const errorMsg = document.createElement('div');
+      errorMsg.className = 'password-error';
+      errorMsg.textContent = 'Incorrect password. Please try again.';
+      errorMsg.style.color = '#ef4444';
+      errorMsg.style.marginTop = '0.5rem';
+      errorMsg.style.fontSize = '0.875rem';
+      
+      // Remove any existing error messages first
+      const existingError = modalContent.querySelector('.password-error');
+      if (existingError) {
+        existingError.remove();
+      }
+      
+      // Find the correct form group in the modal to add the error
+      const formGroup = modalContent.querySelector('.form-group');
+      if (formGroup) {
+        formGroup.appendChild(errorMsg);
+      }
+      
+      // Clear the password field
+      passwordInput.value = '';
+      passwordInput.focus();
     }
-    
-    // Add the error message to the modal
-    document.querySelector('.form-group').appendChild(errorMsg);
-    
-    // Clear the password field
-    passwordInput.value = '';
-    passwordInput.focus();
   }
 }
 
