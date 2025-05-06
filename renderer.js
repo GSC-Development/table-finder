@@ -12,8 +12,10 @@ let currentEvent = {
 };
 
 // DOM Elements
-let searchModeBtn, floorModeBtn, adminModeBtn;
-let searchSection, floorSection, adminSection;
+let searchModeBtn, adminModeBtn;
+let guestManagementBtn, floorPlanBtn;
+let searchSection, adminSection;
+let guestManagementContent, floorPlanContent;
 let searchInput, alphabetBar, searchResults;
 let floorTitle, floorPlan, floorGrid, availableTablesContainer;
 let addTableBtn, editTablesBtn;
@@ -77,11 +79,15 @@ function checkDOMElements() {
   
   // Mode buttons and sections
   searchModeBtn = document.getElementById('search-mode-btn');
-  floorModeBtn = document.getElementById('floor-mode-btn');
   adminModeBtn = document.getElementById('admin-mode-btn');
   searchSection = document.getElementById('search-section');
-  floorSection = document.getElementById('floor-section');
   adminSection = document.getElementById('admin-section');
+  
+  // Admin sub-navigation
+  guestManagementBtn = document.getElementById('guest-management-btn');
+  floorPlanBtn = document.getElementById('floor-plan-btn');
+  guestManagementContent = document.getElementById('guest-management-content');
+  floorPlanContent = document.getElementById('floor-plan-content');
   
   // Search elements
   searchInput = document.getElementById('search-input');
@@ -145,11 +151,13 @@ function checkDOMElements() {
   const missingElements = [];
   [
     { name: 'searchModeBtn', element: searchModeBtn },
-    { name: 'floorModeBtn', element: floorModeBtn },
     { name: 'adminModeBtn', element: adminModeBtn },
     { name: 'searchSection', element: searchSection },
-    { name: 'floorSection', element: floorSection },
     { name: 'adminSection', element: adminSection },
+    { name: 'guestManagementBtn', element: guestManagementBtn },
+    { name: 'floorPlanBtn', element: floorPlanBtn },
+    { name: 'guestManagementContent', element: guestManagementContent },
+    { name: 'floorPlanContent', element: floorPlanContent },
     { name: 'searchInput', element: searchInput },
     { name: 'alphabetBar', element: alphabetBar },
     { name: 'searchResults', element: searchResults },
@@ -232,16 +240,20 @@ function addEventListeners() {
   console.log('Adding event listeners');
   
   // Tab switching
-  if (searchModeBtn && floorModeBtn && adminModeBtn) {
+  if (searchModeBtn && adminModeBtn) {
     searchModeBtn.addEventListener('click', () => switchMode('search'));
-    floorModeBtn.addEventListener('click', () => switchMode('floor'));
     adminModeBtn.addEventListener('click', () => switchMode('admin'));
   } else {
     console.error('One or more mode buttons not found');
   }
   
-  // Note: Search functionality is now handled directly in the DOMContentLoaded event
-  // to ensure it's always properly attached
+  // Admin sub-tab switching
+  if (guestManagementBtn && floorPlanBtn) {
+    guestManagementBtn.addEventListener('click', () => switchAdminSubTab('guest-management'));
+    floorPlanBtn.addEventListener('click', () => switchAdminSubTab('floor-plan'));
+  } else {
+    console.error('One or more admin sub-tab buttons not found');
+  }
   
   // Modal controls
   if (modalClose) {
@@ -360,7 +372,7 @@ function addEventListeners() {
   }
 }
 
-// Switch between modes (search, floor plan, admin)
+// Switch between modes (search, admin)
 function switchMode(mode) {
   // For Admin mode, check password first
   if (mode === 'admin') {
@@ -373,18 +385,32 @@ function switchMode(mode) {
   
   // Update tab buttons
   searchModeBtn.classList.toggle('active', mode === 'search');
-  floorModeBtn.classList.toggle('active', mode === 'floor');
   adminModeBtn.classList.toggle('active', mode === 'admin');
   
   // Update visible section
   searchSection.classList.toggle('active', mode === 'search');
-  floorSection.classList.toggle('active', mode === 'floor');
   adminSection.classList.toggle('active', mode === 'admin');
   
-  // Update UI based on mode
-  if (mode === 'floor') {
+  // If switching to admin mode, make sure floor plan is rendered if needed
+  if (mode === 'admin' && floorPlanContent.classList.contains('active')) {
     renderFloorPlan();
-    // Make sure table scale is applied
+    updateTableScale();
+  }
+}
+
+// Switch between admin sub-tabs
+function switchAdminSubTab(tab) {
+  // Update sub-tab buttons
+  guestManagementBtn.classList.toggle('active', tab === 'guest-management');
+  floorPlanBtn.classList.toggle('active', tab === 'floor-plan');
+  
+  // Update visible content
+  guestManagementContent.classList.toggle('active', tab === 'guest-management');
+  floorPlanContent.classList.toggle('active', tab === 'floor-plan');
+  
+  // If switching to floor plan, render it
+  if (tab === 'floor-plan') {
+    renderFloorPlan();
     updateTableScale();
   }
 }
@@ -410,8 +436,8 @@ function showAdminPasswordPrompt() {
     if (searchSection.classList.contains('active')) {
       searchModeBtn.classList.add('active');
       adminModeBtn.classList.remove('active');
-    } else if (floorSection.classList.contains('active')) {
-      floorModeBtn.classList.add('active');
+    } else if (floorPlanContent.classList.contains('active')) {
+      floorPlanBtn.classList.add('active');
       adminModeBtn.classList.remove('active');
     }
   });
@@ -445,12 +471,13 @@ function checkAdminPassword() {
     closeModal();
     // Complete the switch to admin mode
     searchModeBtn.classList.remove('active');
-    floorModeBtn.classList.remove('active');
     adminModeBtn.classList.add('active');
     
     searchSection.classList.remove('active');
-    floorSection.classList.remove('active');
     adminSection.classList.add('active');
+    
+    // Ensure guest management tab is active by default
+    switchAdminSubTab('guest-management');
   } else {
     // Show error message
     const errorMsg = document.createElement('div');
@@ -706,7 +733,7 @@ function showTableView(selectedGuest) {
   searchResults.appendChild(backButton);
   
   // Highlight table in floor plan
-  if (floorSection.classList.contains('active')) {
+  if (floorPlanContent.classList.contains('active')) {
     highlightTable(selectedGuest.tableId);
   }
 }
@@ -1528,7 +1555,7 @@ function saveNewGuest() {
   showGuestManagementModal();
   
   // Update floor plan if it's visible
-  if (floorSection.classList.contains('active')) {
+  if (floorPlanContent.classList.contains('active')) {
     renderFloorPlan();
   }
 }
@@ -1643,7 +1670,7 @@ function saveGuestChanges(guestId) {
   `;
   
   // Update floor plan if it's visible
-  if (floorSection.classList.contains('active')) {
+  if (floorPlanContent.classList.contains('active')) {
     renderFloorPlan();
   }
 }
@@ -2117,7 +2144,7 @@ function processFloorPlanImage(file) {
     updateFloorPlanImageDisplay();
     
     // If floor plan section is active, re-render it
-    if (floorSection.classList.contains('active')) {
+    if (floorPlanContent.classList.contains('active')) {
       renderFloorPlan();
     }
   };
@@ -2142,7 +2169,7 @@ function removeFloorPlanImage() {
   updateFloorPlanImageDisplay();
   
   // If floor plan section is active, re-render it
-  if (floorSection.classList.contains('active')) {
+  if (floorPlanContent.classList.contains('active')) {
     renderFloorPlan();
   }
 }

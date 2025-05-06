@@ -28,15 +28,6 @@
             </svg>
             Search
           </button>
-          <button id="floor-mode-btn" class="tab">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="7" height="7"></rect>
-              <rect x="14" y="3" width="7" height="7"></rect>
-              <rect x="14" y="14" width="7" height="7"></rect>
-              <rect x="3" y="14" width="7" height="7"></rect>
-            </svg>
-            Floor Plan
-          </button>
           <button id="admin-mode-btn" class="tab">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
@@ -68,138 +59,148 @@
         <div id="search-results" class="search-results"></div>
       </section>
       
-      <!-- Floor Plan Mode -->
-      <section id="floor-section" class="mode-section">
-        <div class="floor-plan-header">
-          <h2 id="floor-title" class="section-title">Floor Plan</h2>
-          <div class="floor-plan-actions">
-            <div class="table-scale-control">
-              <label for="table-scale-slider">Table Size</label>
-              <input type="range" id="table-scale-slider" min="50" max="100" value="100" class="slider">
-              <span id="table-scale-value">100%</span>
-            </div>
-            <button id="toggle-lock-btn" class="btn">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
-              <span id="lock-status-text">Locked</span>
-            </button>
-            <div id="edit-mode-indicator" class="edit-mode-indicator hidden">
-              <span class="edit-mode-text">Edit Mode</span>
-            </div>
-          </div>
-        </div>
-        
-        <div class="floor-plan-layout">
-          <!-- Table Panel (left side) -->
-          <div class="floor-plan-panel">
-            <h3 class="panel-title">Available Tables</h3>
-            <div id="available-tables" class="available-tables">
-              <!-- Tables will be populated here -->
-            </div>
-          </div>
-          
-          <!-- Floor Plan Grid (right side) -->
-          <div class="floor-plan-container">
-            <div id="floor-plan" class="floor-plan">
-              <div id="floor-grid" class="floor-grid">
-                <!-- Grid content will go here -->
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-      
       <!-- Admin Mode -->
       <section id="admin-section" class="mode-section">
         <h2 class="section-title">Event Administration</h2>
         
-        <div class="admin-panel">
-          <!-- Event Settings -->
-          <div class="panel-section">
-            <h3 class="section-heading">Event Settings</h3>
-            
-            <div class="form-group">
-              <label for="event-name">Event Name</label>
-              <div class="form-input-group">
-                <input type="text" id="event-name" class="form-control" placeholder="Enter event name">
-                <button id="save-event-name" class="btn primary">Save</button>
+        <!-- Admin Sub Navigation -->
+        <div class="admin-sub-nav">
+          <button id="guest-management-btn" class="sub-tab active">Guest Management</button>
+          <button id="floor-plan-btn" class="sub-tab">Floor Plans</button>
+        </div>
+        
+        <!-- Guest Management Content -->
+        <div id="guest-management-content" class="admin-sub-content active">
+          <div class="admin-panel">
+            <!-- Event Settings -->
+            <div class="panel-section">
+              <h3 class="section-heading">Event Settings</h3>
+              
+              <div class="form-group">
+                <label for="event-name">Event Name</label>
+                <div class="form-input-group">
+                  <input type="text" id="event-name" class="form-control" placeholder="Enter event name">
+                  <button id="save-event-name" class="btn primary">Save</button>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="event-date">Event Date</label>
+                <input type="date" id="event-date" class="form-control">
+              </div>
+              
+              <div class="form-group">
+                <label for="logo-uploader">Event Logo (800 x 800px recommended)</label>
+                <div id="logo-drop-area" class="logo-drop-area">
+                  <p>Drag & drop a logo image here</p>
+                  <div class="or-separator">OR</div>
+                  <input type="file" id="logo-file-input" accept="image/*" style="display:none">
+                  <button id="logo-select-btn" class="btn">Select Image</button>
+                </div>
+                <div id="logo-preview" class="logo-preview hidden">
+                  <img id="logo-preview-img" src="">
+                  <button id="remove-logo-btn" class="btn danger">Remove Logo</button>
+                </div>
               </div>
             </div>
             
-            <div class="form-group">
-              <label for="event-date">Event Date</label>
-              <input type="date" id="event-date" class="form-control">
+            <!-- Import Guest List (formerly Paste Guest Data) -->
+            <div class="panel-section">
+              <h3 class="section-heading">Import Guest List</h3>
+              <p class="help-text">Paste data in the format: Name,Role,TableNumber (e.g., John Doe,,1)</p>
+              <div class="form-group">
+                <textarea id="paste-data-area" class="form-control textarea" rows="8" placeholder="Paste guest data here..."></textarea>
+              </div>
+              <div class="form-actions">
+                <button id="process-pasted-data-btn" class="btn primary">Import Guests</button>
+              </div>
             </div>
             
-            <div class="form-group">
-              <label for="logo-uploader">Event Logo (800 x 800px recommended)</label>
-              <div id="logo-drop-area" class="logo-drop-area">
-                <p>Drag & drop a logo image here</p>
-                <div class="or-separator">OR</div>
-                <input type="file" id="logo-file-input" accept="image/*" style="display:none">
-                <button id="logo-select-btn" class="btn">Select Image</button>
+            <!-- Table Management -->
+            <div class="panel-section">
+              <h3 class="section-heading">Table Management</h3>
+              <div class="table-management">
+                <button id="add-table-btn" class="btn">Add Table</button>
+                <button id="edit-tables-btn" class="btn">Edit Tables</button>
               </div>
-              <div id="logo-preview" class="logo-preview hidden">
-                <img id="logo-preview-img" src="">
-                <button id="remove-logo-btn" class="btn danger">Remove Logo</button>
+              
+              <!-- Floor Plan Background Image -->
+              <div class="form-group" style="margin-top: 1rem;">
+                <label for="floor-plan-image">Floor Plan Background Image</label>
+                <div id="floor-image-drop-area" class="logo-drop-area">
+                  <p>Drag & drop a floor plan image here</p>
+                  <div class="or-separator">OR</div>
+                  <input type="file" id="floor-image-file-input" accept="image/*" style="display:none">
+                  <button id="floor-image-select-btn" class="btn">Select Image</button>
+                </div>
+                <div id="floor-image-preview" class="logo-preview hidden">
+                  <img id="floor-image-preview-img" src="">
+                  <button id="remove-floor-image-btn" class="btn danger">Remove Floor Plan Image</button>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Guest Management -->
+            <div class="panel-section">
+              <h3>Guest Management</h3>
+              <button id="view-guests-btn" class="btn primary">View & Edit Guests</button>
+            </div>
+            
+            <!-- Clear Data -->
+            <div class="panel-section">
+              <h3>Clear Data</h3>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="clear-event-name-checkbox">
+                  Also clear event name
+                </label>
+              </div>
+              <button id="clear-all-data-btn" class="btn danger">Clear All Data</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Floor Plan Content -->
+        <div id="floor-plan-content" class="admin-sub-content">
+          <!-- Floor Plan Mode Content -->
+          <div class="floor-plan-header">
+            <h2 id="floor-title" class="section-title">Floor Plan</h2>
+            <div class="floor-plan-actions">
+              <div class="table-scale-control">
+                <label for="table-scale-slider">Table Size</label>
+                <input type="range" id="table-scale-slider" min="50" max="100" value="100" class="slider">
+                <span id="table-scale-value">100%</span>
+              </div>
+              <button id="toggle-lock-btn" class="btn">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span id="lock-status-text">Locked</span>
+              </button>
+              <div id="edit-mode-indicator" class="edit-mode-indicator hidden">
+                <span class="edit-mode-text">Edit Mode</span>
               </div>
             </div>
           </div>
           
-          <!-- Import Guest List (formerly Paste Guest Data) -->
-          <div class="panel-section">
-            <h3 class="section-heading">Import Guest List</h3>
-            <p class="help-text">Paste data in the format: Name,Role,TableNumber (e.g., John Doe,,1)</p>
-            <div class="form-group">
-              <textarea id="paste-data-area" class="form-control textarea" rows="8" placeholder="Paste guest data here..."></textarea>
-            </div>
-            <div class="form-actions">
-              <button id="process-pasted-data-btn" class="btn primary">Import Guests</button>
-            </div>
-          </div>
-          
-          <!-- Table Management -->
-          <div class="panel-section">
-            <h3 class="section-heading">Table Management</h3>
-            <div class="table-management">
-              <button id="add-table-btn" class="btn">Add Table</button>
-              <button id="edit-tables-btn" class="btn">Edit Tables</button>
+          <div class="floor-plan-layout">
+            <!-- Table Panel (left side) -->
+            <div class="floor-plan-panel">
+              <h3 class="panel-title">Available Tables</h3>
+              <div id="available-tables" class="available-tables">
+                <!-- Tables will be populated here -->
+              </div>
             </div>
             
-            <!-- Floor Plan Background Image -->
-            <div class="form-group" style="margin-top: 1rem;">
-              <label for="floor-plan-image">Floor Plan Background Image</label>
-              <div id="floor-image-drop-area" class="logo-drop-area">
-                <p>Drag & drop a floor plan image here</p>
-                <div class="or-separator">OR</div>
-                <input type="file" id="floor-image-file-input" accept="image/*" style="display:none">
-                <button id="floor-image-select-btn" class="btn">Select Image</button>
-              </div>
-              <div id="floor-image-preview" class="logo-preview hidden">
-                <img id="floor-image-preview-img" src="">
-                <button id="remove-floor-image-btn" class="btn danger">Remove Floor Plan Image</button>
+            <!-- Floor Plan Grid (right side) -->
+            <div class="floor-plan-container">
+              <div id="floor-plan" class="floor-plan">
+                <div id="floor-grid" class="floor-grid">
+                  <!-- Grid content will go here -->
+                </div>
               </div>
             </div>
-          </div>
-          
-          <!-- Guest Management -->
-          <div class="panel-section">
-            <h3>Guest Management</h3>
-            <button id="view-guests-btn" class="btn primary">View & Edit Guests</button>
-          </div>
-          
-          <!-- Clear Data -->
-          <div class="panel-section">
-            <h3>Clear Data</h3>
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="clear-event-name-checkbox">
-                Also clear event name
-              </label>
-            </div>
-            <button id="clear-all-data-btn" class="btn danger">Clear All Data</button>
           </div>
         </div>
       </section>
