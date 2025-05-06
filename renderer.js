@@ -1524,7 +1524,8 @@ function processPastedData() {
   // Clear the textarea
   pasteDataArea.value = '';
   
-  // Refresh UI
+  // Refresh UI - add call to updateUI() to fully refresh all components
+  updateUI();
   renderFloorPlan();
   alert(`Successfully added ${newGuests.length} guests`);
 }
