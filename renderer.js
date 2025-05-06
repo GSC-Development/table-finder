@@ -1942,11 +1942,9 @@ function updateLockStatus() {
   if (isFloorPlanLocked) {
     toggleLockBtn.classList.remove('unlocked');
     lockStatusText.textContent = 'Locked';
-    editModeIndicator.classList.add('hidden');
   } else {
     toggleLockBtn.classList.add('unlocked');
     lockStatusText.textContent = 'Unlocked';
-    editModeIndicator.classList.remove('hidden');
   }
 }
 
