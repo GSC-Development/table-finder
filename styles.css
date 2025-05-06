@@ -1617,3 +1617,60 @@
       grid-template-columns: repeat(2, 1fr);
     }
   }
+
+  /* Single table container styles */
+  .single-table-container {
+    display: flex;
+    justify-content: center;
+    margin: 20px auto;
+    min-height: 300px;
+  }
+
+  .table-card.single-table {
+    width: 90%;
+    max-width: 600px;
+    margin: 0 auto;
+    height: auto;
+    min-height: 300px;
+    transition: transform 0.3s ease;
+  }
+
+  .table-card.single-table:hover {
+    transform: translateY(-5px);
+  }
+
+  .table-card.single-table .table-card-guests {
+    max-height: none;
+    overflow: visible;
+  }
+
+  /* Make pagination controls more prominent */
+  .pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto;
+    gap: 20px;
+  }
+
+  .pagination-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    border-radius: 30px;
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+
+  .pagination-btn:hover {
+    background-color: #4338ca;
+  }
+
+  .page-info {
+    font-size: 18px;
+    font-weight: 500;
+    min-width: 120px;
+    text-align: center;
+  }

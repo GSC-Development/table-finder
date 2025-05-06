@@ -351,6 +351,12 @@ function switchMode(mode) {
       showAdminPasswordPrompt();
       return; // Stop here, actual switch will happen after password check
     }
+    
+    // Stop auto-advance timer when switching to admin mode
+    if (window.autoAdvanceTimer) {
+      clearInterval(window.autoAdvanceTimer);
+      window.autoAdvanceTimer = null;
+    }
   }
   
   // Update tab buttons
@@ -361,8 +367,20 @@ function switchMode(mode) {
   searchSection.classList.toggle('active', mode === 'search');
   adminSection.classList.toggle('active', mode === 'admin');
   
+  // If switching back to search mode, restart the auto-advance
+  if (mode === 'search') {
+    // Make sure tables are visible
+    const tablesOverviewEl = document.querySelector('.tables-overview');
+    if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
+    
+    // Clear any search results
+    searchResults.innerHTML = '';
+    
+    // Re-render tables to restart auto-advance
+    renderTablesOverview();
+  }
   // If switching to admin mode, make sure floor plan is rendered if needed
-  if (mode === 'admin' && floorPlanContent.classList.contains('active')) {
+  else if (mode === 'admin' && floorPlanContent.classList.contains('active')) {
     renderFloorPlan();
     updateTableScale();
   }
@@ -548,8 +566,12 @@ function renderTablesOverview() {
   
   console.log('Tables container found');
   
-  // Clear container
+  // Clear container and stop any existing auto-advance timer
   tablesOverviewContainer.innerHTML = '';
+  if (window.autoAdvanceTimer) {
+    clearInterval(window.autoAdvanceTimer);
+    window.autoAdvanceTimer = null;
+  }
   
   // If no tables, show message
   if (!currentEvent.tables || currentEvent.tables.length === 0) {
@@ -560,8 +582,8 @@ function renderTablesOverview() {
   
   console.log(`Found ${currentEvent.tables.length} tables to display`);
   
-  // Calculate pagination
-  const tablesPerPage = 10; // Show 10 tables per page (2 rows of 5)
+  // Calculate pagination - now showing 1 table per page
+  const tablesPerPage = 1; // Changed from 10 to 1 table per page for single row layout
   
   // Initialize pagination state if it doesn't exist
   if (!window.paginationState) {
@@ -587,24 +609,24 @@ function renderTablesOverview() {
   
   console.log(`Displaying tables ${startIndex + 1} to ${endIndex} (${currentPageTables.length} tables)`);
   
-  // Create grid container for table cards
-  const gridContainer = document.createElement('div');
-  gridContainer.className = 'table-grid-container';
+  // Create container for table card - single table view
+  const tableContainer = document.createElement('div');
+  tableContainer.className = 'single-table-container';
   
-  // Create table cards in a grid layout
-  currentPageTables.forEach(table => {
+  // Create table card for the current table
+  if (currentPageTables.length > 0) {
+    const table = currentPageTables[0];
+    
     // Get guests at this table
     const tableGuests = currentEvent.guests.filter(g => g.tableId === table.id);
     
     // Create table card
     const tableCard = document.createElement('div');
-    tableCard.className = 'table-card';
+    tableCard.className = 'table-card single-table';
     
     // Create table card header
     const tableCardHeader = document.createElement('div');
     tableCardHeader.className = 'table-card-header';
-    
-    // Note: Removed the close button for view-only mode
     
     tableCardHeader.innerHTML = `
       <div class="table-card-title">${table.name}</div>
@@ -644,9 +666,9 @@ function renderTablesOverview() {
       }
     });
     
-    // Add to grid container
-    gridContainer.appendChild(tableCard);
-  });
+    // Add to container
+    tableContainer.appendChild(tableCard);
+  }
   
   // Create pagination controls
   const paginationControls = document.createElement('div');
@@ -669,18 +691,12 @@ function renderTablesOverview() {
   nextButton.className = 'pagination-btn next-btn';
   nextButton.innerHTML = 'Next &rarr;';
   nextButton.addEventListener('click', () => {
-    if (window.paginationState.currentPage < window.paginationState.totalPages - 1) {
-      window.paginationState.currentPage++;
-    } else {
-      // Loop back to the first page
-      window.paginationState.currentPage = 0;
-    }
-    renderTablesOverview();
+    advanceToNextTable();
   });
   
   const pageInfo = document.createElement('div');
   pageInfo.className = 'page-info';
-  pageInfo.textContent = `Page ${window.paginationState.currentPage + 1} of ${window.paginationState.totalPages}`;
+  pageInfo.textContent = `Table ${window.paginationState.currentPage + 1} of ${window.paginationState.totalPages}`;
   
   // Only show pagination controls if there's more than one page
   if (window.paginationState.totalPages > 1) {
@@ -689,11 +705,29 @@ function renderTablesOverview() {
     paginationControls.appendChild(nextButton);
   }
   
-  // Add grid and pagination to container
-  tablesOverviewContainer.appendChild(gridContainer);
+  // Add container and pagination to the main container
+  tablesOverviewContainer.appendChild(tableContainer);
   tablesOverviewContainer.appendChild(paginationControls);
   
+  // Set up auto-advance timer (10 seconds)
+  if (window.paginationState.totalPages > 1) {
+    window.autoAdvanceTimer = setInterval(() => {
+      advanceToNextTable();
+    }, 10000);
+  }
+  
   console.log('Finished rendering tables overview');
+}
+
+// Helper function to advance to the next table
+function advanceToNextTable() {
+  if (window.paginationState.currentPage < window.paginationState.totalPages - 1) {
+    window.paginationState.currentPage++;
+  } else {
+    // Loop back to the first page
+    window.paginationState.currentPage = 0;
+  }
+  renderTablesOverview();
 }
 
 // Letter filter functionality
@@ -718,6 +752,8 @@ function handleLetterClick(letter) {
   if (isAlreadyActive) {
     searchResults.innerHTML = '';
     if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
+    // Re-render tables to restart auto-advance
+    renderTablesOverview();
     return;
   }
   
@@ -727,6 +763,12 @@ function handleLetterClick(letter) {
       btn.classList.add('active');
     }
   });
+  
+  // Stop auto-advance timer when showing letter filter results
+  if (window.autoAdvanceTimer) {
+    clearInterval(window.autoAdvanceTimer);
+    window.autoAdvanceTimer = null;
+  }
   
   // Hide tables overview when showing letter search results
   if (tablesOverviewEl) tablesOverviewEl.style.display = 'none';
@@ -751,6 +793,8 @@ function clearLetterFilter() {
     searchResults.innerHTML = '';
     // Show tables overview if search is empty
     if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
+    // Re-render tables to restart auto-advance
+    renderTablesOverview();
   } else {
     // Re-run search to refresh layout
     performSearch();
@@ -845,6 +889,12 @@ function showTableView(selectedGuest) {
   const searchResultsEl = document.getElementById('search-results');
   const tablesOverviewEl = document.querySelector('.tables-overview');
   
+  // Stop auto-advance timer when showing table view
+  if (window.autoAdvanceTimer) {
+    clearInterval(window.autoAdvanceTimer);
+    window.autoAdvanceTimer = null;
+  }
+  
   // Hide tables overview when showing table view
   if (tablesOverviewEl) tablesOverviewEl.style.display = 'none';
   
@@ -894,6 +944,8 @@ function showTableView(selectedGuest) {
     } else {
       searchResultsEl.innerHTML = '';
       if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
+      // Re-render tables to restart auto-advance
+      renderTablesOverview();
     }
   });
   searchResultsEl.appendChild(backButton);
@@ -2007,7 +2059,15 @@ function performSearch() {
   if (!searchText) {
     searchResultsEl.innerHTML = '';
     if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
+    // Re-render tables to restart auto-advance
+    renderTablesOverview();
     return;
+  }
+  
+  // Stop auto-advance timer when showing search results
+  if (window.autoAdvanceTimer) {
+    clearInterval(window.autoAdvanceTimer);
+    window.autoAdvanceTimer = null;
   }
   
   // Hide tables overview when showing search results
