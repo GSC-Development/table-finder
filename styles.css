@@ -303,15 +303,18 @@
   }
   
   .result-card {
-    background-color: white;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    background-color: #fff;
     border: 1px solid #e2e8f0;
-    width: 100%;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
   
   /* In two-column layout, reset bottom margin for cards */
@@ -321,6 +324,8 @@
   
   .result-card:hover {
     background-color: #f8fafc;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
   }
   
   .result-card.highlighted {
@@ -330,29 +335,37 @@
   
   .result-header {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    margin-bottom: 0.25rem;
+    text-align: center;
+    margin-bottom: 0.5rem;
   }
   
   .table-badge {
-    background-color: #dbeafe;
-    color: #1d4ed8;
+    background-color: #f0f9ff;
+    color: #0369a1;
     font-size: 0.75rem;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-weight: 500;
+    padding: 0.3rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-top: 0.4rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    border: 1px solid #bae6fd;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
   
   .guest-name {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0f172a;
   }
   
   .guest-role {
     font-size: 0.875rem;
     color: #64748b;
+    text-align: center;
+    margin-top: 0.25rem;
   }
   
   .table-info {
@@ -1194,18 +1207,6 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-  }
-  
-  /* Result card */
-  .result-card {
-    background-color: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    height: auto;
   }
   
   /* Table info */

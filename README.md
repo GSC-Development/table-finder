@@ -1,4 +1,4 @@
-# Table Finder
+# SeatPlan
 
 A desktop application built with Electron to help event organizers quickly find where guests are seated.
 

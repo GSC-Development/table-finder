@@ -1,4 +1,4 @@
-// renderer.js - UI logic for the Table Finder app
+// renderer.js - UI logic for the SeatPlan app
 
 // Sample initial data
 let currentEvent = {
@@ -477,10 +477,10 @@ function checkAdminPassword() {
 
 // Update all UI elements
 function updateUI() {
-  // Update event name in header (use "Table Finder" if empty)
-  appTitle.textContent = currentEvent.name || 'Table Finder';
+  // Update event name in header (use "SeatPlan" if empty)
+  appTitle.textContent = currentEvent.name || 'SeatPlan';
   eventNameInput.value = currentEvent.name;
-  floorTitle.textContent = `${currentEvent.name || 'Table Finder'} - Floor Plan`;
+  floorTitle.textContent = `${currentEvent.name || 'SeatPlan'} - Floor Plan`;
   
   // Update event date if it exists
   if (eventDateInput) {
@@ -681,7 +681,9 @@ function showTableView(selectedGuest) {
     }
     
     card.innerHTML = `
-      <div class="guest-name">${guest.name}</div>
+      <div class="result-header">
+        <div class="guest-name">${guest.name}</div>
+      </div>
       ${guest.role ? `<div class="guest-role">${guest.role}</div>` : ''}
     `;
     

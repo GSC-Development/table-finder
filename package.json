@@ -1,7 +1,7 @@
 {
-  "name": "table-finder",
+  "name": "seatplan",
   "version": "1.0.0",
-  "description": "table-finder",
+  "description": "seatplan",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -17,8 +17,8 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.tablefinder.app",
-    "productName": "Table Finder",
+    "appId": "com.seatplan.app",
+    "productName": "SeatPlan",
     "directories": {
       "output": "dist"
     },
