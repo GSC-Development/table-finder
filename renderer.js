@@ -48,6 +48,10 @@ let placedTables = new Set(); // IDs of tables placed on floor plan
 let floorImageDropArea, floorImageFileInput, floorImageSelectBtn;
 let floorImagePreview, floorImagePreviewImg, removeFloorImageBtn;
 
+// Add the new DOM elements for the floor plan image modal
+let uploadFloorPlanBtn, floorImageModal, floorImageModalClose;
+let confirmFloorImageBtn, cancelFloorImageBtn;
+
 // Initialize application
 function init() {
   console.log('Initializing application...');
@@ -147,6 +151,13 @@ function checkDOMElements() {
   floorImagePreviewImg = document.getElementById('floor-image-preview-img');
   removeFloorImageBtn = document.getElementById('remove-floor-image-btn');
   
+  // Floor plan image modal elements
+  uploadFloorPlanBtn = document.getElementById('upload-floor-plan-btn');
+  floorImageModal = document.getElementById('floor-image-modal');
+  floorImageModalClose = document.getElementById('floor-image-modal-close');
+  confirmFloorImageBtn = document.getElementById('confirm-floor-image-btn');
+  cancelFloorImageBtn = document.getElementById('cancel-floor-image-btn');
+  
   // Log missing elements
   const missingElements = [];
   [
@@ -197,7 +208,12 @@ function checkDOMElements() {
     { name: 'floorImageSelectBtn', element: floorImageSelectBtn },
     { name: 'floorImagePreview', element: floorImagePreview },
     { name: 'floorImagePreviewImg', element: floorImagePreviewImg },
-    { name: 'removeFloorImageBtn', element: removeFloorImageBtn }
+    { name: 'removeFloorImageBtn', element: removeFloorImageBtn },
+    { name: 'uploadFloorPlanBtn', element: uploadFloorPlanBtn },
+    { name: 'floorImageModal', element: floorImageModal },
+    { name: 'floorImageModalClose', element: floorImageModalClose },
+    { name: 'confirmFloorImageBtn', element: confirmFloorImageBtn },
+    { name: 'cancelFloorImageBtn', element: cancelFloorImageBtn }
   ].forEach(item => {
     if (!item.element) {
       missingElements.push(item.name);
@@ -369,6 +385,16 @@ function addEventListeners() {
     removeFloorImageBtn.addEventListener('click', removeFloorPlanImage);
   } else {
     console.error('One or more floor plan image elements not found');
+  }
+  
+  // Floor plan image modal
+  if (uploadFloorPlanBtn && floorImageModalClose && confirmFloorImageBtn && cancelFloorImageBtn) {
+    uploadFloorPlanBtn.addEventListener('click', showFloorImageModal);
+    floorImageModalClose.addEventListener('click', hideFloorImageModal);
+    confirmFloorImageBtn.addEventListener('click', confirmFloorImage);
+    cancelFloorImageBtn.addEventListener('click', hideFloorImageModal);
+  } else {
+    console.error('One or more floor plan image modal elements not found');
   }
 }
 
@@ -2153,14 +2179,22 @@ function processFloorPlanImage(file) {
 }
 
 function updateFloorPlanImageDisplay() {
-  // Update preview in admin panel
+  // Update preview in modal
   if (currentEvent.floorPlanImage) {
-    floorImagePreviewImg.src = currentEvent.floorPlanImage;
-    floorImagePreview.classList.remove('hidden');
-    floorImageDropArea.classList.add('hidden');
+    if (floorImagePreviewImg) {
+      floorImagePreviewImg.src = currentEvent.floorPlanImage;
+      floorImagePreview.classList.remove('hidden');
+    }
+    if (removeFloorImageBtn) {
+      removeFloorImageBtn.classList.remove('hidden');
+    }
   } else {
-    floorImagePreview.classList.add('hidden');
-    floorImageDropArea.classList.remove('hidden');
+    if (floorImagePreview) {
+      floorImagePreview.classList.add('hidden');
+    }
+    if (removeFloorImageBtn) {
+      removeFloorImageBtn.classList.add('hidden');
+    }
   }
 }
 
@@ -2169,7 +2203,38 @@ function removeFloorPlanImage() {
   updateFloorPlanImageDisplay();
   
   // If floor plan section is active, re-render it
-  if (floorPlanContent.classList.contains('active')) {
+  if (floorPlanContent && floorPlanContent.classList.contains('active')) {
     renderFloorPlan();
   }
+}
+
+// Add the new functions for handling the floor plan image modal
+function showFloorImageModal() {
+  // Reset the preview
+  if (floorImagePreview) {
+    floorImagePreview.classList.add('hidden');
+  }
+  
+  // Show the modal
+  floorImageModal.classList.remove('hidden');
+}
+
+function hideFloorImageModal() {
+  floorImageModal.classList.add('hidden');
+}
+
+function confirmFloorImage() {
+  // Update the display in the main UI
+  updateFloorPlanImageDisplay();
+  
+  // Hide the modal
+  hideFloorImageModal();
+  
+  // Update the remove button visibility
+  if (removeFloorImageBtn) {
+    removeFloorImageBtn.classList.toggle('hidden', !currentEvent.floorPlanImage);
+  }
+  
+  // Render the floor plan with the new image
+  renderFloorPlan();
 }

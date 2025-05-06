@@ -116,30 +116,6 @@
               </div>
             </div>
             
-            <!-- Table Management -->
-            <div class="panel-section">
-              <h3 class="section-heading">Table Management</h3>
-              <div class="table-management">
-                <button id="add-table-btn" class="btn">Add Table</button>
-                <button id="edit-tables-btn" class="btn">Edit Tables</button>
-              </div>
-              
-              <!-- Floor Plan Background Image -->
-              <div class="form-group" style="margin-top: 1rem;">
-                <label for="floor-plan-image">Floor Plan Background Image</label>
-                <div id="floor-image-drop-area" class="logo-drop-area">
-                  <p>Drag & drop a floor plan image here</p>
-                  <div class="or-separator">OR</div>
-                  <input type="file" id="floor-image-file-input" accept="image/*" style="display:none">
-                  <button id="floor-image-select-btn" class="btn">Select Image</button>
-                </div>
-                <div id="floor-image-preview" class="logo-preview hidden">
-                  <img id="floor-image-preview-img" src="">
-                  <button id="remove-floor-image-btn" class="btn danger">Remove Floor Plan Image</button>
-                </div>
-              </div>
-            </div>
-            
             <!-- Guest Management -->
             <div class="panel-section">
               <h3>Guest Management</h3>
@@ -163,38 +139,48 @@
         <!-- Floor Plan Content -->
         <div id="floor-plan-content" class="admin-sub-content">
           <!-- Floor Plan Mode Content -->
-          <div class="floor-plan-header">
-            <h2 id="floor-title" class="section-title">Floor Plan</h2>
-            <div class="floor-plan-actions">
-              <div class="table-scale-control">
-                <label for="table-scale-slider">Table Size</label>
-                <input type="range" id="table-scale-slider" min="50" max="100" value="100" class="slider">
-                <span id="table-scale-value">100%</span>
-              </div>
-              <button id="toggle-lock-btn" class="btn">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                <span id="lock-status-text">Locked</span>
-              </button>
-              <div id="edit-mode-indicator" class="edit-mode-indicator hidden">
-                <span class="edit-mode-text">Edit Mode</span>
-              </div>
-            </div>
-          </div>
-          
           <div class="floor-plan-layout">
             <!-- Table Panel (left side) -->
             <div class="floor-plan-panel">
-              <h3 class="panel-title">Available Tables</h3>
+              <div class="floor-panel-header">
+                <div class="table-management-controls">
+                  <button id="add-table-btn" class="btn primary">Add Table</button>
+                  <button id="edit-tables-btn" class="btn">Edit Tables</button>
+                </div>
+                <h3 class="panel-title">Available Tables</h3>
+              </div>
               <div id="available-tables" class="available-tables">
                 <!-- Tables will be populated here -->
+              </div>
+              
+              <!-- Floor Plan Background Image -->
+              <div class="floor-image-controls">
+                <button id="upload-floor-plan-btn" class="btn">Upload Floor Plan Image</button>
+                <button id="remove-floor-image-btn" class="btn danger hidden">Remove Image</button>
               </div>
             </div>
             
             <!-- Floor Plan Grid (right side) -->
             <div class="floor-plan-container">
+              <div class="floor-plan-header">
+                <div class="floor-plan-actions">
+                  <div class="table-scale-control">
+                    <label for="table-scale-slider">Table Size</label>
+                    <input type="range" id="table-scale-slider" min="50" max="100" value="100" class="slider">
+                    <span id="table-scale-value">100%</span>
+                  </div>
+                  <button id="toggle-lock-btn" class="btn">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                    <span id="lock-status-text">Locked</span>
+                  </button>
+                  <div id="edit-mode-indicator" class="edit-mode-indicator hidden">
+                    <span class="edit-mode-text">Edit Mode</span>
+                  </div>
+                </div>
+              </div>
               <div id="floor-plan" class="floor-plan">
                 <div id="floor-grid" class="floor-grid">
                   <!-- Grid content will go here -->
@@ -214,6 +200,31 @@
           <button id="modal-close" class="modal-close">&times;</button>
         </div>
         <div id="modal-content" class="modal-content"></div>
+      </div>
+    </div>
+    
+    <!-- Floor Plan Image Upload Modal -->
+    <div id="floor-image-modal" class="modal-container hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Upload Floor Plan Image</h3>
+          <button id="floor-image-modal-close" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content">
+          <div id="floor-image-drop-area" class="logo-drop-area">
+            <p>Drag & drop a floor plan image here</p>
+            <div class="or-separator">OR</div>
+            <input type="file" id="floor-image-file-input" accept="image/*" style="display:none">
+            <button id="floor-image-select-btn" class="btn">Select Image</button>
+          </div>
+          <div id="floor-image-preview" class="logo-preview hidden">
+            <img id="floor-image-preview-img" src="">
+          </div>
+          <div class="modal-actions">
+            <button id="confirm-floor-image-btn" class="btn primary">Confirm</button>
+            <button id="cancel-floor-image-btn" class="btn">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

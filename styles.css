@@ -1420,3 +1420,29 @@
   .admin-sub-content.active {
     display: block;
   }
+  
+  /* Floor Panel Header */
+  .floor-panel-header {
+    margin-bottom: 1rem;
+  }
+  
+  .table-management-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .floor-image-controls {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+  }
+  
+  /* Position the floor header properly inside the container */
+  .floor-plan-container .floor-plan-header {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
