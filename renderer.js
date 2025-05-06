@@ -792,13 +792,27 @@ function renderFloorPlan() {
   // Add background image if available
   if (currentEvent.floorPlanImage) {
     floorGrid.classList.add('has-bg-image');
-    const bgImage = document.createElement('img');
-    bgImage.className = 'floor-grid-bg-image';
+    
+    // Check if we already have a background image
+    let bgImage = floorGrid.querySelector('.floor-grid-bg-image');
+    
+    // Create new background image if none exists
+    if (!bgImage) {
+      bgImage = document.createElement('img');
+      bgImage.className = 'floor-grid-bg-image';
+      bgImage.alt = 'Floor Plan Background';
+      floorGrid.appendChild(bgImage);
+    }
+    
     bgImage.src = currentEvent.floorPlanImage;
-    bgImage.alt = 'Floor Plan Background';
-    floorGrid.appendChild(bgImage);
   } else {
     floorGrid.classList.remove('has-bg-image');
+    
+    // Remove any existing background image
+    const bgImage = floorGrid.querySelector('.floor-grid-bg-image');
+    if (bgImage) {
+      bgImage.remove();
+    }
   }
   
   // Separate tables into available and placed
