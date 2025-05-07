@@ -1649,7 +1649,7 @@ function showAddTableModal() {
     </div>
     <div class="form-group">
       <label for="table-seats">Number of Seats</label>
-      <input type="number" id="table-seats" class="modal-input" value="10" min="1">
+      <input type="number" id="table-seats" class="modal-input" value="12" min="1">
     </div>
     <div class="modal-actions">
       <button id="cancel-add-table" class="btn">Cancel</button>
@@ -1669,7 +1669,7 @@ function showAddTableModal() {
 function addNewTable() {
   const tableName = document.getElementById('table-name').value.trim();
   const tableShape = 'circle'; // Always use circle shape
-  const tableSeats = parseInt(document.getElementById('table-seats').value) || 10;
+  const tableSeats = parseInt(document.getElementById('table-seats').value) || 12;
   
   if (!tableName) {
     alert('Please enter a table name');
