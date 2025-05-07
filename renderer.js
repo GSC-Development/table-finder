@@ -69,12 +69,6 @@ function init() {
   // Add event listeners
   addEventListeners();
   
-  // Add some sample data if needed for testing
-  if (currentEvent.tables.length === 0 && currentEvent.guests.length === 0) {
-    console.log('Adding sample data for testing');
-    addSampleData();
-  }
-  
   // Initialize UI
   updateUI();
   
@@ -286,6 +280,19 @@ function addEventListeners() {
   clearAllDataBtn.addEventListener('click', clearAllData);
   processPastedDataBtn.addEventListener('click', processPastedData);
   saveEventNameBtn.addEventListener('click', saveEventName);
+  
+  // CSV import
+  const csvImportBtn = document.getElementById('csv-import-btn');
+  const csvFileInput = document.getElementById('csv-file-input');
+  
+  if (csvImportBtn && csvFileInput) {
+    csvImportBtn.addEventListener('click', () => csvFileInput.click());
+    csvFileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        importCsv();
+      }
+    });
+  }
   
   // Search functionality - use performSearch instead of handleSearch
   searchInput.addEventListener('input', performSearch);
@@ -1230,8 +1237,391 @@ function updateTableScale() {
 }
 
 // Import CSV
-function importCsv() {
-  alert('Import CSV functionality has been removed');
+async function importCsv() {
+  try {
+    // Use the preload importCsv function to open a file dialog and get CSV data
+    const result = await window.api.importCsv();
+    
+    if (result.success) {
+      // Process the CSV data
+      processImportedCSV(result.data);
+    } else {
+      // Handle cancellation or error
+      console.log('CSV import was cancelled or failed:', result.message);
+    }
+  } catch (error) {
+    console.error('Error importing CSV:', error);
+    alert('Error importing CSV file: ' + error.message);
+  }
+}
+
+// Process imported CSV data
+function processImportedCSV(csvData) {
+  if (!csvData) {
+    alert('No data found in CSV file');
+    return;
+  }
+  
+  // Split into lines and remove any BOM characters or special characters that might appear in CSV files
+  const lines = csvData.replace(/^\ufeff/, '').split('\n');
+  
+  const result = processGuestImportData(lines, true);
+  
+  if (!result.success) {
+    alert(result.message);
+    return;
+  }
+  
+  // Refresh UI
+  updateUI();
+  renderFloorPlan();
+  
+  // Create message for alerts
+  let message = `Successfully imported ${result.count} guests from CSV file`;
+  
+  // Show errors if any
+  if (result.errors && result.errors.length > 0) {
+    // Format the errors to be more user-friendly
+    const formattedErrors = result.errors.slice(0, 5).map(err => `• ${err}`).join('\n');
+    const additionalErrorsMsg = result.errors.length > 5 ? `\n• And ${result.errors.length - 5} more issues...` : '';
+    
+    alert(`${message}\n\nNotes:\n${formattedErrors}${additionalErrorsMsg}`);
+  } else {
+    alert(message);
+  }
+}
+
+// Process pasted data
+function processPastedData() {
+  const pastedText = pasteDataArea.value.trim();
+  
+  if (!pastedText) {
+    alert('Please paste some data first');
+    return;
+  }
+  
+  // Split into lines
+  const lines = pastedText.split('\n');
+  
+  const result = processGuestImportData(lines, false);
+  
+  if (!result.success) {
+    alert(result.message);
+    return;
+  }
+  
+  // Clear the textarea
+  pasteDataArea.value = '';
+  
+  // Refresh UI
+  updateUI();
+  renderFloorPlan();
+  
+  // Create message for alerts
+  let message = `Successfully imported ${result.count} guests`;
+  
+  // Show errors and warnings if any
+  let additionalDetails = '';
+  
+  if (result.errors && result.errors.length > 0) {
+    // Format the errors to be more user-friendly
+    const formattedErrors = result.errors.slice(0, 3).map(err => `• ${err}`).join('\n');
+    const additionalErrorsMsg = result.errors.length > 3 ? `\n• And ${result.errors.length - 3} more errors...` : '';
+    additionalDetails += `\n\nErrors:\n${formattedErrors}${additionalErrorsMsg}`;
+  }
+  
+  if (result.warnings && result.warnings.length > 0) {
+    // Format the warnings to be more user-friendly
+    const formattedWarnings = result.warnings.slice(0, 3).map(warn => `• ${warn}`).join('\n');
+    const additionalWarningsMsg = result.warnings.length > 3 ? `\n• And ${result.warnings.length - 3} more warnings...` : '';
+    additionalDetails += `\n\nWarnings:\n${formattedWarnings}${additionalWarningsMsg}`;
+  }
+  
+  // Show alert with appropriate details
+  if (additionalDetails) {
+    alert(message + additionalDetails);
+  } else {
+    alert(message);
+  }
+}
+
+// Common function to process guest import data (used by both paste and CSV import)
+function processGuestImportData(lines, isCSV = false) {
+  if (lines.length === 0) {
+    return { success: false, message: 'No valid data found' };
+  }
+  
+  console.log(`Processing ${lines.length} lines of import data`);
+  
+  // Process each line
+  const newGuests = [];
+  const tableMap = new Map();
+  const errors = [];
+  let count = 0;
+  
+  // Track guest counts per table to enforce capacity limits
+  const tableGuestCounts = {};
+  const MAX_GUESTS_PER_TABLE = 12; // Increased from 10 to 12
+  
+  // Create a map of existing tables with normalized names
+  currentEvent.tables.forEach(table => {
+    // Normalize table name: lowercase, remove extra spaces, and extract numbers
+    const normalizedName = normalizeTableName(table.name);
+    console.log(`Mapped existing table: "${table.name}" → "${normalizedName}" (ID: ${table.id})`);
+    tableMap.set(normalizedName, table.id);
+    
+    // Initialize guest counts for existing tables (including already assigned guests)
+    tableGuestCounts[table.id] = currentEvent.guests.filter(g => g.tableId === table.id).length;
+    console.log(`Table "${table.name}" already has ${tableGuestCounts[table.id]} guests`);
+    
+    // Only map the number if this specific table follows the "Table X" pattern
+    // This prevents all tables from mapping to the same numeric key
+    const tableNumberMatch = table.name.match(/^table\s*(\d+)$/i);
+    if (tableNumberMatch) {
+      const tableNumber = tableNumberMatch[1];
+      // Only add this mapping if another table isn't already using this number
+      if (!tableMap.has(tableNumber)) {
+        tableMap.set(tableNumber, table.id);
+        console.log(`  Also mapped as number: "${tableNumber}" → "${table.id}"`);
+      } else {
+        console.log(`  Can't map as number: "${tableNumber}" is already used by another table`);
+      }
+    }
+  });
+  
+  // Skip header row for CSV if it exists
+  const startIndex = (isCSV && lines[0].toLowerCase().includes('name')) ? 1 : 0;
+  
+  // Track tables created during this import by their actual names (not normalized)
+  // This ensures tables with similar normalized names are still treated as distinct
+  const newTables = new Map();
+  
+  // First pass - group guests by actual table name to count how many per table
+  const guestsByTable = {};
+  
+  for (let i = startIndex; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    
+    // Get parts, handling CSV parsing if needed
+    const parts = isCSV ? parseCSVLine(line) : line.split(',');
+    
+    if (parts.length < 3) {
+      errors.push(`Line ${i+1}: Not enough columns (expected at least 3, got ${parts.length})`);
+      continue;
+    }
+    
+    const name = parts[0].trim();
+    const role = parts[1] ? parts[1].trim() : '';
+    let tableName = parts[2] ? parts[2].trim() : '';
+    
+    if (!name) {
+      errors.push(`Line ${i+1}: Missing guest name`);
+      continue;
+    }
+    
+    if (!tableName) {
+      errors.push(`Line ${i+1}: Missing table name/number for guest "${name}"`);
+      continue;
+    }
+    
+    // Add to the count for this original table name
+    if (!guestsByTable[tableName]) {
+      guestsByTable[tableName] = [];
+    }
+    guestsByTable[tableName].push({ name, role, lineNum: i+1 });
+  }
+  
+  // Second pass - process each table and validate capacity
+  Object.entries(guestsByTable).forEach(([originalTableName, tableGuests]) => {
+    // Format the table name if it's just a number
+    let displayTableName = originalTableName;
+    if (/^\d+$/.test(originalTableName)) {
+      displayTableName = `Table ${originalTableName}`;
+    }
+    
+    // Normalize for lookup
+    const normalizedName = normalizeTableName(originalTableName);
+    
+    // Try to find the table by normal means
+    let tableId = newTables.get(originalTableName);
+    
+    // If not found in new tables, try to find in existing tables
+    if (!tableId) {
+      tableId = findTableIdByName(tableMap, normalizedName);
+    }
+    
+    // Check total guest count for this table
+    const existingGuestCount = tableId ? (tableGuestCounts[tableId] || 0) : 0;
+    const newGuestCount = tableGuests.length;
+    
+    // If adding these guests would exceed capacity, show error
+    if (existingGuestCount + newGuestCount > MAX_GUESTS_PER_TABLE) {
+      errors.push(`Table "${displayTableName}" would exceed capacity (${existingGuestCount} + ${newGuestCount} > ${MAX_GUESTS_PER_TABLE}). Some guests won't be added.`);
+      
+      // Only process guests up to capacity
+      tableGuests = tableGuests.slice(0, MAX_GUESTS_PER_TABLE - existingGuestCount);
+      
+      if (tableGuests.length === 0) {
+        return; // Skip this table entirely if it's already at capacity
+      }
+    }
+    
+    // If the table doesn't exist, create it
+    if (!tableId) {
+      // Create new table
+      tableId = `table${Date.now()}-${Math.floor(Math.random() * 1000)}-${count}`;
+      
+      const newTable = {
+        id: tableId,
+        name: displayTableName,
+        shape: 'circle',
+        seats: MAX_GUESTS_PER_TABLE,
+        xPercent: 50, 
+        yPercent: 50
+      };
+      
+      // Add to current event
+      currentEvent.tables.push(newTable);
+      
+      // Update maps
+      tableMap.set(normalizeTableName(displayTableName), tableId);
+      newTables.set(originalTableName, tableId);
+      tableGuestCounts[tableId] = 0;
+      
+      console.log(`Created new table: "${displayTableName}" with ID: ${tableId}`);
+    }
+    
+    // Process all guests for this table
+    tableGuests.forEach(({ name, role, lineNum }) => {
+      // Safety check for table capacity
+      if (tableGuestCounts[tableId] >= MAX_GUESTS_PER_TABLE) {
+        errors.push(`Line ${lineNum}: Couldn't add guest "${name}" - table "${displayTableName}" is at capacity (${MAX_GUESTS_PER_TABLE} guests)`);
+        return;
+      }
+      
+      // Create guest
+      const guest = {
+        id: `guest${Date.now()}-${Math.floor(Math.random() * 1000)}-${count}`,
+        name,
+        role,
+        tableId
+      };
+      
+      // Increment guest count for this table
+      tableGuestCounts[tableId] = (tableGuestCounts[tableId] || 0) + 1;
+      
+      console.log(`Added guest: "${name}" to table "${displayTableName}" (ID: ${tableId}) - Now ${tableGuestCounts[tableId]}/${MAX_GUESTS_PER_TABLE}`);
+      newGuests.push(guest);
+      count++;
+    });
+  });
+  
+  // Log any import issues
+  if (errors.length > 0) {
+    console.error('Import issues:');
+    errors.forEach(err => console.error(' - ' + err));
+  }
+  
+  if (newGuests.length === 0) {
+    return { 
+      success: false, 
+      message: 'No valid guest data found' + (errors.length > 0 ? `. Errors: ${errors.join(', ')}` : '')
+    };
+  }
+  
+  // Add guests to event
+  currentEvent.guests = [...currentEvent.guests, ...newGuests];
+  
+  // Return success
+  return { 
+    success: true, 
+    count: newGuests.length,
+    errors: errors.length > 0 ? errors : null
+  };
+}
+
+// Helper function to normalize table names for consistent matching
+function normalizeTableName(name) {
+  if (!name) return '';
+  
+  // Start by trimming and converting to lowercase
+  let normalized = name.trim().toLowerCase();
+  
+  // Replace multiple spaces with single space
+  normalized = normalized.replace(/\s+/g, ' ');
+  
+  // If it's just a number, that's our normalized form
+  if (/^\d+$/.test(normalized)) {
+    return normalized;
+  }
+  
+  // For "Table X" or "Table - X" or variations, extract and normalize
+  const tableNumberMatch = normalized.match(/^table\s*[-:]?\s*(\d+)/i) || 
+                          normalized.match(/^t\s*[-:]?\s*(\d+)/i) ||
+                          normalized.match(/^(\d+)$/);
+  
+  if (tableNumberMatch) {
+    return `table${tableNumberMatch[1]}`;
+  }
+  
+  return normalized;
+}
+
+// Helper function to find a table ID by trying various matching methods
+function findTableIdByName(tableMap, normalizedName) {
+  // Direct match with normalized name
+  if (tableMap.has(normalizedName)) {
+    return tableMap.get(normalizedName);
+  }
+  
+  // Try to extract just the number if it's a "table X" format
+  const numberMatch = normalizedName.match(/table\s*(\d+)/i);
+  if (numberMatch && tableMap.has(numberMatch[1])) {
+    return tableMap.get(numberMatch[1]);
+  }
+  
+  // If the name itself is just a number, try that
+  if (/^\d+$/.test(normalizedName) && tableMap.has(normalizedName)) {
+    return tableMap.get(normalizedName);
+  }
+  
+  // If all else fails, try a more fuzzy match (checking if any mapped key contains this name)
+  for (const [key, id] of tableMap.entries()) {
+    if (key.includes(normalizedName) || normalizedName.includes(key)) {
+      console.log(`Fuzzy match: "${normalizedName}" matched with "${key}"`);
+      return id;
+    }
+  }
+  
+  return null;
+}
+
+// Helper function to parse CSV lines properly handling quotes
+function parseCSVLine(text) {
+  const result = [];
+  let cell = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    if (char === '"') {
+      // Handle quotes - toggle quote state
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      // Add cell to result when comma is encountered outside quotes
+      result.push(cell);
+      cell = '';
+    } else {
+      // Add character to current cell
+      cell += char;
+    }
+  }
+  
+  // Add the last cell
+  result.push(cell);
+  return result;
 }
 
 // Export CSV
@@ -1471,113 +1861,6 @@ function showModal(title, content) {
 // Close modal
 function closeModal() {
   modalContainer.classList.add('hidden');
-}
-
-// Process pasted data
-function processPastedData() {
-  const pastedText = pasteDataArea.value.trim();
-  
-  if (!pastedText) {
-    alert('Please paste some data first');
-    return;
-  }
-  
-  // Split into lines
-  const lines = pastedText.split('\n');
-  
-  if (lines.length === 0) {
-    alert('No valid data found');
-    return;
-  }
-  
-  // Process each line
-  const newGuests = [];
-  const tableMap = new Map();
-  let count = 0;
-  
-  // Create a map of existing tables
-  currentEvent.tables.forEach(table => {
-    tableMap.set(table.name.toLowerCase(), table.id);
-  });
-  
-  for (const line of lines) {
-    if (!line.trim()) continue;
-    
-    // Split by comma
-    const parts = line.split(',');
-    if (parts.length < 2) continue;
-    
-    const name = parts[0].trim();
-    const role = parts[1] ? parts[1].trim() : '';
-    let tableName = parts[2] ? parts[2].trim() : '';
-    
-    // Extract table number from format like "2 - This is my table name"
-    let tableNumber = '';
-    if (tableName.includes('-')) {
-      const tableMatch = tableName.match(/^(\d+)\s*-/);
-      if (tableMatch) {
-        tableNumber = tableMatch[1];
-        tableName = 'Table ' + tableNumber;
-      }
-    } else if (!isNaN(tableName)) {
-      // If it's just a number, use "Table X" format
-      tableNumber = tableName;
-      tableName = 'Table ' + tableNumber;
-    }
-    
-    if (!name || !tableName) continue;
-    
-    // Check if table exists, create if not
-    let tableId = tableMap.get(tableName.toLowerCase());
-    if (!tableId) {
-      // Create new table
-      tableId = `table${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      const tableCount = currentEvent.tables.length;
-      
-      // Position in grid pattern
-      const col = tableCount % 3;
-      const row = Math.floor(tableCount / 3);
-      
-      const newTable = {
-        id: tableId,
-        name: tableName,
-        shape: 'circle', // Always use circle shape
-        seats: 10,
-        xPercent: 50, // Default to center if placed
-        yPercent: 50
-      };
-      
-      currentEvent.tables.push(newTable);
-      tableMap.set(tableName.toLowerCase(), tableId);
-    }
-    
-    // Create guest
-    const guest = {
-      id: `guest${Date.now()}-${Math.floor(Math.random() * 1000)}-${count}`,
-      name,
-      role,
-      tableId
-    };
-    
-    newGuests.push(guest);
-    count++;
-  }
-  
-  if (newGuests.length === 0) {
-    alert('No valid guest data found');
-    return;
-  }
-  
-  // Add guests to event
-  currentEvent.guests = [...currentEvent.guests, ...newGuests];
-  
-  // Clear the textarea
-  pasteDataArea.value = '';
-  
-  // Refresh UI - add call to updateUI() to fully refresh all components
-  updateUI();
-  renderFloorPlan();
-  alert(`Successfully added ${newGuests.length} guests`);
 }
 
 // Save event name
@@ -1977,33 +2260,15 @@ function addSampleData() {
   const dd = String(today.getDate()).padStart(2, '0');
   currentEvent.date = `${yyyy}-${mm}-${dd}`;
   
-  // Add some sample tables
-  const sampleTables = [
-    { id: 'table1', name: 'Table 1', shape: 'circle', seats: 10, xPercent: 50, yPercent: 50 },
-    { id: 'table2', name: 'Table 2', shape: 'circle', seats: 8, xPercent: 50, yPercent: 50 },
-    { id: 'table3', name: 'Table 3', shape: 'circle', seats: 8, xPercent: 50, yPercent: 50 },
-    { id: 'table4', name: 'Table 4', shape: 'circle', seats: 10, xPercent: 50, yPercent: 50 },
-    { id: 'table5', name: 'Table 5', shape: 'circle', seats: 8, xPercent: 50, yPercent: 50 },
-    { id: 'table6', name: 'Table 6', shape: 'circle', seats: 8, xPercent: 50, yPercent: 50 },
-  ];
+  // Create empty tables and guests arrays
+  const sampleTables = [];
+  const sampleGuests = [];
   
-  // Add sample guests
-  const sampleGuests = [
-    { id: 'guest1', name: 'James Murphy', role: 'CEO', tableId: 'table1' },
-    { id: 'guest2', name: 'John Rawlinson', role: 'CTO', tableId: 'table1' },
-    { id: 'guest3', name: 'Jeremy Mellish', role: 'Developer', tableId: 'table1' },
-    { id: 'guest4', name: 'James Booth', role: 'Designer', tableId: 'table2' },
-    { id: 'guest5', name: 'James McNally', role: 'Marketing', tableId: 'table2' },
-    { id: 'guest6', name: 'John Joe Ip', role: 'Developer', tableId: 'table4' },
-    { id: 'guest7', name: 'James Evans', role: 'Sales', tableId: 'table6' },
-    { id: 'guest8', name: 'Jill Rowlinson', role: 'HR', tableId: 'table6' },
-  ];
-  
-  // Add data to currentEvent
+  // Add empty data to currentEvent
   currentEvent.tables = sampleTables;
   currentEvent.guests = sampleGuests;
   
-  console.log('Sample data added:', currentEvent);
+  console.log('Empty data initialized:', currentEvent);
 }
 
 // Initialize on DOMContentLoaded
