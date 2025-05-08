@@ -899,7 +899,13 @@ function renderSearchResults(guests) {
   if (isLetterSelection) {
     const backButton = document.createElement('button');
     backButton.className = 'back-button';
-    backButton.innerHTML = '&#8592; Back to tables';
+    backButton.innerHTML = `
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; margin-right: 8px;">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      Back to tables
+    `;
     backButton.addEventListener('click', () => {
       clearLetterFilter();
       searchResultsEl.innerHTML = '';
@@ -984,7 +990,13 @@ function showTableView(selectedGuest) {
   // Add back button
   const backButton = document.createElement('button');
   backButton.className = 'back-button';
-  backButton.innerHTML = '&#8592; Back to search results';
+  backButton.innerHTML = `
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; margin-right: 8px;">
+      <line x1="19" y1="12" x2="5" y2="12"></line>
+      <polyline points="12 19 5 12 12 5"></polyline>
+    </svg>
+    Back to search results
+  `;
   backButton.addEventListener('click', () => {
     if (searchInput.value) {
       performSearch();
