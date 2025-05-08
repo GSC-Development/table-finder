@@ -70,6 +70,9 @@ let settingsBtn;
 let eventSettingsContent;
 let settingsContent;
 
+// Add to the global variables at the top
+let csvImportBtn, csvFileInput;
+
 // Initialize application
 function init() {
   console.log('Initializing application...');
@@ -284,6 +287,22 @@ function checkDOMElements() {
     }
   });
   
+  // CSV import elements
+  csvImportBtn = document.getElementById('csv-import-btn');
+  csvFileInput = document.getElementById('csv-file-input');
+  
+  if (!csvImportBtn || !csvFileInput) {
+    console.error('CSV import elements not found:', { csvImportBtn, csvFileInput });
+  } else {
+    console.log('CSV import elements found:', { csvImportBtn, csvFileInput });
+  }
+  
+  // Add CSV elements to the missing elements check
+  missingElements.push(
+    { name: 'csvImportBtn', element: csvImportBtn },
+    { name: 'csvFileInput', element: csvFileInput }
+  );
+  
   if (missingElements.length > 0) {
     console.error('Missing elements:', missingElements);
   } else {
@@ -333,17 +352,35 @@ function addEventListeners() {
   processPastedDataBtn.addEventListener('click', processPastedData);
   saveEventNameBtn.addEventListener('click', saveEventName);
   
-  // CSV import
+  // CSV import - with improved error handling and logging
   const csvImportBtn = document.getElementById('csv-import-btn');
   const csvFileInput = document.getElementById('csv-file-input');
   
   if (csvImportBtn && csvFileInput) {
-    csvImportBtn.addEventListener('click', () => csvFileInput.click());
-    csvFileInput.addEventListener('change', (e) => {
+    console.log('Setting up CSV import event listeners');
+    
+    // Remove any existing listeners first
+    const newCsvImportBtn = csvImportBtn.cloneNode(true);
+    const newCsvFileInput = csvFileInput.cloneNode(true);
+    
+    csvImportBtn.parentNode.replaceChild(newCsvImportBtn, csvImportBtn);
+    csvFileInput.parentNode.replaceChild(newCsvFileInput, csvFileInput);
+    
+    // Add new event listeners with logging
+    newCsvFileInput.addEventListener('change', function(e) {
+      console.log('CSV file input change event triggered');
       if (e.target.files.length > 0) {
+        console.log('File selected:', e.target.files[0]);
         importCsv(e.target.files[0]);
       }
     });
+    
+    newCsvImportBtn.addEventListener('click', function() {
+      console.log('CSV import button clicked');
+      newCsvFileInput.click();
+    });
+  } else {
+    console.error('CSV import elements not found during initialization');
   }
   
   // Search functionality - use performSearch instead of handleSearch
@@ -1324,70 +1361,90 @@ function updateTableScale() {
 // Import CSV
 async function importCsv(file) {
   try {
+    console.log('importCsv called with file:', file);
+    
     // If a file is provided directly (from file input), use it
     if (file) {
+      console.log('File details:', {
+        name: file.name,
+        type: file.type,
+        size: file.size
+      });
+      
       const reader = new FileReader();
+      
       reader.onload = (e) => {
+        console.log('FileReader onload triggered');
         const csvData = e.target.result;
+        console.log('CSV data length:', csvData.length);
         processImportedCSV(csvData);
       };
+      
       reader.onerror = (e) => {
-        console.error('Error reading CSV file:', e);
+        console.error('FileReader error:', e);
+        console.error('Error details:', reader.error);
         alert('Error reading CSV file: ' + e.message);
       };
-      reader.readAsText(file);
-    } 
-    // Otherwise, use the preload importCsv function to open a file dialog
-    else {
-      const result = await window.api.importCsv();
       
-      if (result.success) {
-        // Process the CSV data
-        processImportedCSV(result.data);
-      } else {
-        // Handle cancellation or error
-        console.log('CSV import was cancelled or failed:', result.message);
-      }
+      console.log('Starting to read file...');
+      reader.readAsText(file);
+      console.log('Read operation initiated');
+    } else {
+      console.error('No file provided to importCsv');
+      alert('Please select a CSV file');
     }
   } catch (error) {
-    console.error('Error importing CSV:', error);
+    console.error('Error in importCsv:', error);
+    console.error('Error stack:', error.stack);
     alert('Error importing CSV file: ' + error.message);
   }
 }
 
 // Process imported CSV data
 function processImportedCSV(csvData) {
+  console.log('processImportedCSV called');
+  
   if (!csvData) {
+    console.error('No CSV data provided');
     alert('No data found in CSV file');
     return;
   }
   
-  // Split into lines and remove any BOM characters or special characters that might appear in CSV files
-  const lines = csvData.replace(/^\ufeff/, '').split('\n');
-  
-  const result = processGuestImportData(lines, true);
-  
-  if (!result.success) {
-    alert(result.message);
-    return;
-  }
-  
-  // Refresh UI
-  updateUI();
-  renderFloorPlan();
-  
-  // Create message for alerts
-  let message = `Successfully imported ${result.count} guests from CSV file`;
-  
-  // Show errors if any
-  if (result.errors && result.errors.length > 0) {
-    // Format the errors to be more user-friendly
-    const formattedErrors = result.errors.slice(0, 5).map(err => `• ${err}`).join('\n');
-    const additionalErrorsMsg = result.errors.length > 5 ? `\n• And ${result.errors.length - 5} more issues...` : '';
+  try {
+    // Split into lines and remove any BOM characters or special characters
+    const lines = csvData.replace(/^\ufeff/, '').split('\n');
+    console.log(`Processing ${lines.length} lines from CSV`);
     
-    alert(`${message}\n\nNotes:\n${formattedErrors}${additionalErrorsMsg}`);
-  } else {
-    alert(message);
+    const result = processGuestImportData(lines, true);
+    console.log('processGuestImportData result:', result);
+    
+    if (!result.success) {
+      console.error('Failed to process guest data:', result.message);
+      alert(result.message);
+      return;
+    }
+    
+    // Refresh UI
+    updateUI();
+    renderFloorPlan();
+    
+    // Create message for alerts
+    let message = `Successfully imported ${result.count} guests from CSV file`;
+    
+    // Show errors if any
+    if (result.errors && result.errors.length > 0) {
+      // Format the errors to be more user-friendly
+      const formattedErrors = result.errors.slice(0, 5).map(err => `• ${err}`).join('\n');
+      const additionalErrorsMsg = result.errors.length > 5 ? `\n• And ${result.errors.length - 5} more issues...` : '';
+      
+      alert(`${message}\n\nNotes:\n${formattedErrors}${additionalErrorsMsg}`);
+    } else {
+      alert(message);
+    }
+  } catch (error) {
+    console.error('Error processing CSV:', error);
+    console.error('Error stack:', error.stack);
+    alert('Error processing CSV file: ' + error.message);
   }
 }
 
@@ -2485,6 +2542,8 @@ function clearAllData() {
     return;
   }
   
+  console.log('Clearing all data...');
+  
   // Clear tables and guests
   currentEvent.tables = [];
   currentEvent.guests = [];
@@ -2499,29 +2558,62 @@ function clearAllData() {
   // Update UI
   updateUI();
   
-  // Re-initialize CSV import functionality
+  // Reinitialize CSV import functionality
+  console.log('Starting CSV import reinitialization...');
+  
+  // Get fresh references to the elements
   const csvImportBtn = document.getElementById('csv-import-btn');
   const csvFileInput = document.getElementById('csv-file-input');
   
+  console.log('Current CSV elements:', {
+    importBtn: csvImportBtn,
+    fileInput: csvFileInput
+  });
+  
   if (csvImportBtn && csvFileInput) {
-    // Remove existing listeners to prevent duplicates
-    csvImportBtn.replaceWith(csvImportBtn.cloneNode(true));
-    csvFileInput.replaceWith(csvFileInput.cloneNode(true));
+    console.log('Found CSV elements, reinitializing...');
     
-    // Get fresh references after cloning
-    const newCsvImportBtn = document.getElementById('csv-import-btn');
-    const newCsvFileInput = document.getElementById('csv-file-input');
+    // Remove existing event listeners
+    const oldImportBtn = csvImportBtn;
+    const oldFileInput = csvFileInput;
     
-    // Add new listeners
-    newCsvImportBtn.addEventListener('click', () => newCsvFileInput.click());
-    newCsvFileInput.addEventListener('change', (e) => {
+    // Create new elements
+    const newImportBtn = document.createElement('button');
+    newImportBtn.id = 'csv-import-btn';
+    newImportBtn.className = oldImportBtn.className;
+    newImportBtn.textContent = 'Import CSV';
+    
+    const newFileInput = document.createElement('input');
+    newFileInput.id = 'csv-file-input';
+    newFileInput.type = 'file';
+    newFileInput.accept = '.csv';
+    newFileInput.style.display = 'none';
+    
+    // Replace old elements
+    oldImportBtn.parentNode.replaceChild(newImportBtn, oldImportBtn);
+    oldFileInput.parentNode.replaceChild(newFileInput, oldFileInput);
+    
+    // Add event listeners to new elements
+    newFileInput.addEventListener('change', function(e) {
+      console.log('CSV file input change event triggered');
       if (e.target.files.length > 0) {
+        console.log('File selected:', e.target.files[0]);
         importCsv(e.target.files[0]);
       }
     });
+    
+    newImportBtn.addEventListener('click', function() {
+      console.log('CSV import button clicked');
+      newFileInput.click();
+    });
+    
+    console.log('CSV import elements reinitialized successfully');
+  } else {
+    console.error('Could not find CSV import elements for reinitialization');
   }
   
-  alert('All data has been cleared');
+  // Show confirmation
+  alert('All data has been cleared successfully');
 }
 
 // Toggle floor plan lock/unlock
