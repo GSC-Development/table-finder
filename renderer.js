@@ -832,19 +832,20 @@ function clearLetterFilter() {
   const letterButtons = alphabetBar.querySelectorAll('.letter-button');
   letterButtons.forEach(btn => btn.classList.remove('active'));
   
+  // Clear search input value
+  searchInput.value = '';
+  
   // Get tables overview element
   const tablesOverviewEl = document.querySelector('.tables-overview');
   
-  if (!searchInput.value) {
-    searchResults.innerHTML = '';
-    // Show tables overview if search is empty
-    if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
-    // Re-render tables to restart auto-advance
-    renderTablesOverview();
-  } else {
-    // Re-run search to refresh layout
-    performSearch();
-  }
+  // Always clear search results
+  searchResults.innerHTML = '';
+  
+  // Show tables overview
+  if (tablesOverviewEl) tablesOverviewEl.style.display = 'block';
+  
+  // Re-render tables to restart auto-advance
+  renderTablesOverview();
 }
 
 // Render search results
