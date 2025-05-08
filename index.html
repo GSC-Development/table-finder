@@ -157,10 +157,36 @@
         <!-- Settings Content -->
         <div id="settings-content" class="admin-sub-content">
           <div class="admin-panel">
-            <!-- Settings content will be added later -->
+            <!-- Change Password Section -->
             <div class="panel-section">
-              <h3 class="section-heading">Settings</h3>
-              <p>Settings options will be available soon.</p>
+              <h3 class="section-heading">Change Admin Password</h3>
+              <div class="form-group">
+                <label for="current-password">Current Password:</label>
+                <input type="password" id="current-password" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="new-password">New Password:</label>
+                <input type="password" id="new-password" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="confirm-password">Confirm New Password:</label>
+                <input type="password" id="confirm-password" class="form-control">
+              </div>
+              <button onclick="changeAdminPassword()" class="btn btn-primary">Change Password</button>
+            </div>
+
+            <!-- Timeout Settings Section -->
+            <div class="panel-section">
+              <h3 class="section-heading">Admin Session Timeout</h3>
+              <div class="form-group">
+                <label for="admin-timeout">Select timeout duration:</label>
+                <select id="admin-timeout" class="form-control" onchange="changeAdminTimeout()">
+                  <option value="600000">10 minutes</option>
+                  <option value="1800000">30 minutes</option>
+                  <option value="3600000">1 hour</option>
+                  <option value="0">Never</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>

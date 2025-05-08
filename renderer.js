@@ -8,7 +8,9 @@ let currentEvent = {
   floorPlanImage: null, // Add floor plan image
   tableScale: 100, // Add table scale (percentage)
   tables: [],
-  guests: []
+  guests: [],
+  adminPassword: '9999', // Default admin password
+  adminTimeout: 300000 // Default timeout (5 minutes in milliseconds)
 };
 
 // Add admin authentication state tracking
@@ -533,10 +535,7 @@ function checkAdminPassword() {
   const passwordInput = document.getElementById('admin-password');
   const enteredPassword = passwordInput.value.trim();
   
-  // Change this to your desired admin password
-  const correctPassword = 'admin123';
-  
-  if (enteredPassword === correctPassword) {
+  if (enteredPassword === currentEvent.adminPassword) {
     // Update the last authentication time
     lastAdminAuth = Date.now();
     
@@ -2500,6 +2499,28 @@ function clearAllData() {
   // Update UI
   updateUI();
   
+  // Re-initialize CSV import functionality
+  const csvImportBtn = document.getElementById('csv-import-btn');
+  const csvFileInput = document.getElementById('csv-file-input');
+  
+  if (csvImportBtn && csvFileInput) {
+    // Remove existing listeners to prevent duplicates
+    csvImportBtn.replaceWith(csvImportBtn.cloneNode(true));
+    csvFileInput.replaceWith(csvFileInput.cloneNode(true));
+    
+    // Get fresh references after cloning
+    const newCsvImportBtn = document.getElementById('csv-import-btn');
+    const newCsvFileInput = document.getElementById('csv-file-input');
+    
+    // Add new listeners
+    newCsvImportBtn.addEventListener('click', () => newCsvFileInput.click());
+    newCsvFileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        importCsv(e.target.files[0]);
+      }
+    });
+  }
+  
   alert('All data has been cleared');
 }
 
@@ -3032,4 +3053,48 @@ function applyUShapeLayout() {
   
   // Show confirmation
   alert(`${tables.length} tables arranged in a U-shape layout.`);
+}
+
+// Add new function to handle password change
+function changeAdminPassword() {
+  const currentPassword = document.getElementById('current-password').value.trim();
+  const newPassword = document.getElementById('new-password').value.trim();
+  const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+  if (currentPassword !== currentEvent.adminPassword) {
+    alert('Current password is incorrect');
+    return;
+  }
+
+  if (newPassword === '') {
+    alert('New password cannot be empty');
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    alert('New passwords do not match');
+    return;
+  }
+
+  currentEvent.adminPassword = newPassword;
+  alert('Password changed successfully');
+
+  // Clear the form
+  document.getElementById('current-password').value = '';
+  document.getElementById('new-password').value = '';
+  document.getElementById('confirm-password').value = '';
+}
+
+// Add new function to handle timeout change
+function changeAdminTimeout() {
+  const timeoutSelect = document.getElementById('admin-timeout');
+  const selectedValue = timeoutSelect.value;
+  
+  // Update the timeout value
+  currentEvent.adminTimeout = parseInt(selectedValue);
+  
+  // Update the ADMIN_GRACE_PERIOD constant
+  ADMIN_GRACE_PERIOD = parseInt(selectedValue);
+  
+  alert('Admin timeout updated successfully');
 }
