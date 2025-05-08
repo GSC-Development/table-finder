@@ -1,19 +1,21 @@
 {
   "name": "seatplan",
   "version": "1.0.0",
-  "description": "seatplan",
+  "description": "Table finding and seating arrangement application",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:win-x64": "electron-builder --win --x64"
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "electron": "^36.1.0"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "electron": "^36.1.0",
     "electron-builder": "^24.13.3"
   },
   "build": {
@@ -22,8 +24,29 @@
     "directories": {
       "output": "dist"
     },
+    "files": [
+      "*.js",
+      "*.html",
+      "*.css",
+      "package.json"
+    ],
     "mac": {
-      "category": "public.app-category.utilities"
+      "category": "public.app-category.utilities",
+      "target": ["dmg", "zip"]
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "win": {
       "target": [
