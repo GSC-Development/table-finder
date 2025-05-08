@@ -56,6 +56,12 @@ let floorImagePreview, floorImagePreviewImg, removeFloorImageBtn;
 let uploadFloorPlanBtn, floorImageModal, floorImageModalClose;
 let confirmFloorImageBtn, cancelFloorImageBtn;
 
+// Auto arrange modal elements
+let autoArrangeBtn, autoArrangeModal, autoArrangeModalClose;
+let layoutTypeSelect, tablesPerRowSelect, tableSpacingSelect;
+let circleOptionsDiv, circleSelect, uShapeOptionsDiv, uShapeSelect;
+let cancelAutoArrangeBtn, applyAutoArrangeBtn;
+
 // Initialize application
 function init() {
   console.log('Initializing application...');
@@ -173,6 +179,20 @@ function checkDOMElements() {
   confirmFloorImageBtn = document.getElementById('confirm-floor-image-btn');
   cancelFloorImageBtn = document.getElementById('cancel-floor-image-btn');
   
+  // Auto arrange modal elements
+  autoArrangeBtn = document.getElementById('auto-arrange-btn');
+  autoArrangeModal = document.getElementById('auto-arrange-modal');
+  autoArrangeModalClose = document.getElementById('auto-arrange-modal-close');
+  layoutTypeSelect = document.getElementById('layout-type');
+  tablesPerRowSelect = document.getElementById('tables-per-row');
+  tableSpacingSelect = document.getElementById('table-spacing');
+  circleOptionsDiv = document.getElementById('circle-options');
+  circleSelect = document.getElementById('circle-size');
+  uShapeOptionsDiv = document.getElementById('u-shape-options');
+  uShapeSelect = document.getElementById('u-shape-size');
+  cancelAutoArrangeBtn = document.getElementById('cancel-auto-arrange');
+  applyAutoArrangeBtn = document.getElementById('apply-auto-arrange');
+  
   // Log missing elements
   const missingElements = [];
   [
@@ -226,7 +246,19 @@ function checkDOMElements() {
     { name: 'floorImageModal', element: floorImageModal },
     { name: 'floorImageModalClose', element: floorImageModalClose },
     { name: 'confirmFloorImageBtn', element: confirmFloorImageBtn },
-    { name: 'cancelFloorImageBtn', element: cancelFloorImageBtn }
+    { name: 'cancelFloorImageBtn', element: cancelFloorImageBtn },
+    { name: 'autoArrangeBtn', element: autoArrangeBtn },
+    { name: 'autoArrangeModal', element: autoArrangeModal },
+    { name: 'autoArrangeModalClose', element: autoArrangeModalClose },
+    { name: 'layoutTypeSelect', element: layoutTypeSelect },
+    { name: 'tablesPerRowSelect', element: tablesPerRowSelect },
+    { name: 'tableSpacingSelect', element: tableSpacingSelect },
+    { name: 'circleOptionsDiv', element: circleOptionsDiv },
+    { name: 'circleSelect', element: circleSelect },
+    { name: 'uShapeOptionsDiv', element: uShapeOptionsDiv },
+    { name: 'uShapeSelect', element: uShapeSelect },
+    { name: 'cancelAutoArrangeBtn', element: cancelAutoArrangeBtn },
+    { name: 'applyAutoArrangeBtn', element: applyAutoArrangeBtn }
   ].forEach(item => {
     if (!item.element) {
       missingElements.push(item.name);
@@ -337,6 +369,15 @@ function addEventListeners() {
   floorImageDropArea.addEventListener('drop', handleFloorImageDrop);
   floorImageSelectBtn.addEventListener('click', () => floorImageFileInput.click());
   floorImageFileInput.addEventListener('change', handleFloorImageSelect);
+  
+  // Auto arrange modal
+  autoArrangeBtn.addEventListener('click', showAutoArrangeModal);
+  autoArrangeModalClose.addEventListener('click', hideAutoArrangeModal);
+  cancelAutoArrangeBtn.addEventListener('click', hideAutoArrangeModal);
+  applyAutoArrangeBtn.addEventListener('click', applyAutoArrange);
+  
+  // Layout type change handler
+  layoutTypeSelect.addEventListener('change', updateLayoutOptions);
   
   // Add document event listeners for drag and drop
   document.addEventListener('mousemove', handleMouseMove);
@@ -992,6 +1033,16 @@ function renderFloorPlan() {
       bgImage = document.createElement('img');
       bgImage.className = 'floor-grid-bg-image';
       bgImage.alt = 'Floor Plan Background';
+      // Add important inline styles
+      bgImage.style.position = 'absolute';
+      bgImage.style.top = '0';
+      bgImage.style.left = '0';
+      bgImage.style.width = '100%';
+      bgImage.style.height = '100%';
+      bgImage.style.objectFit = 'contain';
+      bgImage.style.opacity = '0.8';
+      bgImage.style.zIndex = '0';
+      bgImage.style.pointerEvents = 'none';
       floorGrid.appendChild(bgImage);
     }
     
@@ -2711,6 +2762,224 @@ function confirmFloorImage() {
     removeFloorImageBtn.classList.toggle('hidden', !currentEvent.floorPlanImage);
   }
   
-  // Render the floor plan with the new image
+  // Wait a moment before rendering to ensure modal is closed and DOM is ready
+  setTimeout(() => {
+    // Render the floor plan with the new image
+    renderFloorPlan();
+  }, 100);
+}
+
+// Show auto arrange modal
+function showAutoArrangeModal() {
+  // Check if we have tables first
+  if (!currentEvent.tables || currentEvent.tables.length === 0) {
+    alert('No tables available to arrange. Please add tables first.');
+    return;
+  }
+  
+  // Reset layout type to grid
+  layoutTypeSelect.value = 'grid';
+  updateLayoutOptions();
+  
+  // Show modal
+  autoArrangeModal.classList.remove('hidden');
+}
+
+// Hide auto arrange modal
+function hideAutoArrangeModal() {
+  autoArrangeModal.classList.add('hidden');
+}
+
+// Update layout options based on selected layout type
+function updateLayoutOptions() {
+  const layoutType = layoutTypeSelect.value;
+  
+  // Hide all option divs first
+  circleOptionsDiv.style.display = 'none';
+  uShapeOptionsDiv.style.display = 'none';
+  
+  // Show options based on selected layout
+  if (layoutType === 'grid') {
+    document.getElementById('grid-options').style.display = 'block';
+  } else if (layoutType === 'circle') {
+    document.getElementById('circle-options').style.display = 'block';
+  } else if (layoutType === 'u-shape') {
+    document.getElementById('u-shape-options').style.display = 'block';
+  }
+}
+
+// Apply the selected auto arrange layout
+function applyAutoArrange() {
+  // Unlock the floor plan first
+  isFloorPlanLocked = false;
+  updateLockStatus();
+  
+  const layoutType = layoutTypeSelect.value;
+  
+  // Get appropriate layout function
+  if (layoutType === 'grid') {
+    applyGridLayout();
+  } else if (layoutType === 'circle') {
+    applyCircleLayout();
+  } else if (layoutType === 'u-shape') {
+    applyUShapeLayout();
+  }
+  
+  // Close the modal
+  hideAutoArrangeModal();
+  
+  // Re-render the floor plan
   renderFloorPlan();
+}
+
+// Apply grid layout
+function applyGridLayout() {
+  const tables = currentEvent.tables;
+  const tablesPerRow = parseInt(tablesPerRowSelect.value);
+  const spacing = tableSpacingSelect.value;
+  
+  // Define spacing values
+  let spacingFactor = 0.6; // Normal spacing
+  if (spacing === 'tight') {
+    spacingFactor = 0.4;
+  } else if (spacing === 'spacious') {
+    spacingFactor = 0.8;
+  }
+  
+  // Calculate the number of rows needed
+  const numRows = Math.ceil(tables.length / tablesPerRow);
+  
+  // Calculate the grid dimensions as percentages of the container
+  const cellWidth = 100 / tablesPerRow;
+  const cellHeight = 100 / numRows;
+  
+  // Calculate effective cell size with margins
+  const effectiveCellWidth = cellWidth * (1 - spacingFactor);
+  const effectiveCellHeight = cellHeight * (1 - spacingFactor);
+  
+  // Position each table
+  tables.forEach((table, index) => {
+    // Calculate grid position
+    const row = Math.floor(index / tablesPerRow);
+    const col = index % tablesPerRow;
+    
+    // Calculate center of the cell
+    const xPercent = (col * cellWidth) + (cellWidth / 2);
+    const yPercent = (row * cellHeight) + (cellHeight / 2);
+    
+    // Update table position
+    table.xPercent = xPercent;
+    table.yPercent = yPercent;
+    
+    // Mark table as placed
+    placedTables.add(table.id);
+  });
+  
+  // Show confirmation
+  alert(`${tables.length} tables arranged in a grid layout with ${tablesPerRow} tables per row.`);
+}
+
+// Apply circle layout
+function applyCircleLayout() {
+  const tables = currentEvent.tables;
+  const size = circleSelect.value;
+  
+  // Define radius as percentage of container
+  let radius = 35; // Medium circle size
+  if (size === 'small') {
+    radius = 25;
+  } else if (size === 'large') {
+    radius = 45;
+  }
+  
+  // Calculate center of container
+  const centerX = 50;
+  const centerY = 50;
+  
+  // Position each table in a circle
+  tables.forEach((table, index) => {
+    // Calculate angle for this table (distribute evenly)
+    const angleStep = (2 * Math.PI) / tables.length;
+    const angle = index * angleStep;
+    
+    // Calculate position using circle equation
+    const xPercent = centerX + radius * Math.cos(angle);
+    const yPercent = centerY + radius * Math.sin(angle);
+    
+    // Update table position
+    table.xPercent = xPercent;
+    table.yPercent = yPercent;
+    
+    // Mark table as placed
+    placedTables.add(table.id);
+  });
+  
+  // Show confirmation
+  alert(`${tables.length} tables arranged in a circular layout.`);
+}
+
+// Apply U-shape layout
+function applyUShapeLayout() {
+  const tables = currentEvent.tables;
+  const size = uShapeSelect.value;
+  
+  // Define dimensions of U shape
+  let width = 60; // Medium U shape width
+  let height = 40; // Height of U shape
+  
+  if (size === 'small') {
+    width = 50;
+    height = 30;
+  } else if (size === 'large') {
+    width = 70;
+    height = 50;
+  }
+  
+  // Calculate dimensions
+  const centerX = 50;
+  const bottomY = 80;
+  
+  // Determine number of tables for each segment
+  const leftLegTables = Math.floor(tables.length / 3);
+  const rightLegTables = Math.floor(tables.length / 3);
+  const bottomTables = tables.length - leftLegTables - rightLegTables;
+  
+  // Position tables
+  let tableIndex = 0;
+  
+  // Left leg (bottom to top)
+  for (let i = 0; i < leftLegTables; i++) {
+    if (tableIndex >= tables.length) break;
+    
+    const yPos = bottomY - (height * (i / leftLegTables));
+    tables[tableIndex].xPercent = centerX - (width / 2);
+    tables[tableIndex].yPercent = yPos;
+    placedTables.add(tables[tableIndex].id);
+    tableIndex++;
+  }
+  
+  // Bottom row (left to right)
+  for (let i = 0; i < bottomTables; i++) {
+    if (tableIndex >= tables.length) break;
+    
+    const xPos = (centerX - (width / 2)) + (width * (i / Math.max(1, bottomTables - 1)));
+    tables[tableIndex].xPercent = xPos;
+    tables[tableIndex].yPercent = bottomY;
+    placedTables.add(tables[tableIndex].id);
+    tableIndex++;
+  }
+  
+  // Right leg (bottom to top)
+  for (let i = 0; i < rightLegTables; i++) {
+    if (tableIndex >= tables.length) break;
+    
+    const yPos = bottomY - (height * (i / rightLegTables));
+    tables[tableIndex].xPercent = centerX + (width / 2);
+    tables[tableIndex].yPercent = yPos;
+    placedTables.add(tables[tableIndex].id);
+    tableIndex++;
+  }
+  
+  // Show confirmation
+  alert(`${tables.length} tables arranged in a U-shape layout.`);
 }

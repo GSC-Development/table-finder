@@ -182,6 +182,8 @@
                       <span id="table-scale-value">100%</span>
                     </div>
                     
+                    <button id="auto-arrange-btn" class="btn">Auto Arrange</button>
+                    
                     <button id="toggle-lock-btn" class="btn lock-btn">
                       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -234,6 +236,81 @@
           <div class="modal-actions">
             <button id="confirm-floor-image-btn" class="btn primary">Confirm</button>
             <button id="cancel-floor-image-btn" class="btn">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Auto Arrange Tables Modal -->
+    <div id="auto-arrange-modal" class="modal-container hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Auto Arrange Tables</h3>
+          <button id="auto-arrange-modal-close" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content">
+          <p class="help-text">Select a layout configuration for automatically placing tables on the floor plan.</p>
+          
+          <div class="layout-options">
+            <div class="form-group">
+              <label>Layout Type</label>
+              <select id="layout-type" class="modal-input">
+                <option value="grid">Grid Layout</option>
+                <option value="circle">Circular Layout</option>
+                <option value="u-shape">U-Shape Layout</option>
+              </select>
+            </div>
+            
+            <div id="grid-options">
+              <div class="form-group">
+                <label>Number of Tables per Row</label>
+                <select id="tables-per-row" class="modal-input">
+                  <option value="2">2 Tables</option>
+                  <option value="3">3 Tables</option>
+                  <option value="4" selected>4 Tables</option>
+                  <option value="5">5 Tables</option>
+                  <option value="6">6 Tables</option>
+                  <option value="8">8 Tables</option>
+                  <option value="10">10 Tables</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label>Spacing Between Tables</label>
+                <select id="table-spacing" class="modal-input">
+                  <option value="tight">Tight (Minimal Spacing)</option>
+                  <option value="normal" selected>Normal</option>
+                  <option value="spacious">Spacious</option>
+                </select>
+              </div>
+            </div>
+            
+            <div id="circle-options" style="display: none;">
+              <div class="form-group">
+                <label>Circle Size</label>
+                <select id="circle-size" class="modal-input">
+                  <option value="small">Small (Tight Circle)</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="large">Large (Wide Circle)</option>
+                </select>
+              </div>
+            </div>
+            
+            <div id="u-shape-options" style="display: none;">
+              <div class="form-group">
+                <label>U-Shape Size</label>
+                <select id="u-shape-size" class="modal-input">
+                  <option value="small">Small</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="large">Large</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          <div class="modal-actions">
+            <button id="cancel-auto-arrange" class="btn">Cancel</button>
+            <button id="apply-auto-arrange" class="btn primary">Apply Layout</button>
           </div>
         </div>
       </div>

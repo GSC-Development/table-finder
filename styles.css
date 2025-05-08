@@ -367,6 +367,7 @@
     background-size: 50px 50px;
     background-color: #ffffff;
     overflow: hidden;
+    position: relative;
   }
   
   /* Primary button */
@@ -1116,6 +1117,7 @@
     object-fit: contain;
     opacity: 0.8; /* Slightly transparent to make tables more visible */
     z-index: 0;
+    pointer-events: none; /* Allow clicking through the image */
   }
   
   /* Table object styling */
@@ -1713,4 +1715,60 @@
     font-size: 1.2rem;
     text-align: center;
     padding: 8px 0;
+  }
+
+  /* Auto arrange button */
+  #auto-arrange-btn {
+    background-color: #60a5fa;
+    color: white;
+    border-color: #3b82f6;
+    margin-right: 0.75rem;
+    font-weight: 500;
+  }
+  
+  #auto-arrange-btn:hover {
+    background-color: #3b82f6;
+  }
+  
+  /* Layout options */
+  .layout-options {
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Preview images for layouts */
+  .layout-preview {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  
+  .layout-option {
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .layout-option:hover {
+    border-color: #3b82f6;
+    background-color: #f0f9ff;
+  }
+  
+  .layout-option.selected {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+  }
+  
+  .layout-option img {
+    width: 100%;
+    max-width: 120px;
+    height: auto;
+    margin-bottom: 0.5rem;
+  }
+  
+  .layout-option-label {
+    font-size: 0.875rem;
+    font-weight: 500;
   }
