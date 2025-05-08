@@ -321,7 +321,7 @@ function addEventListeners() {
     csvImportBtn.addEventListener('click', () => csvFileInput.click());
     csvFileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
-        importCsv();
+        importCsv(e.target.files[0]);
       }
     });
   }
@@ -1301,17 +1301,32 @@ function updateTableScale() {
 }
 
 // Import CSV
-async function importCsv() {
+async function importCsv(file) {
   try {
-    // Use the preload importCsv function to open a file dialog and get CSV data
-    const result = await window.api.importCsv();
-    
-    if (result.success) {
-      // Process the CSV data
-      processImportedCSV(result.data);
-    } else {
-      // Handle cancellation or error
-      console.log('CSV import was cancelled or failed:', result.message);
+    // If a file is provided directly (from file input), use it
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const csvData = e.target.result;
+        processImportedCSV(csvData);
+      };
+      reader.onerror = (e) => {
+        console.error('Error reading CSV file:', e);
+        alert('Error reading CSV file: ' + e.message);
+      };
+      reader.readAsText(file);
+    } 
+    // Otherwise, use the preload importCsv function to open a file dialog
+    else {
+      const result = await window.api.importCsv();
+      
+      if (result.success) {
+        // Process the CSV data
+        processImportedCSV(result.data);
+      } else {
+        // Handle cancellation or error
+        console.log('CSV import was cancelled or failed:', result.message);
+      }
     }
   } catch (error) {
     console.error('Error importing CSV:', error);
