@@ -62,6 +62,12 @@ let layoutTypeSelect, tablesPerRowSelect, tableSpacingSelect;
 let circleOptionsDiv, circleSelect, uShapeOptionsDiv, uShapeSelect;
 let cancelAutoArrangeBtn, applyAutoArrangeBtn;
 
+// Variables for new tab elements
+let eventSettingsBtn;
+let settingsBtn;
+let eventSettingsContent;
+let settingsContent;
+
 // Initialize application
 function init() {
   console.log('Initializing application...');
@@ -97,9 +103,15 @@ function checkDOMElements() {
   
   // Admin sub-navigation
   guestManagementBtn = document.getElementById('guest-management-btn');
+  eventSettingsBtn = document.getElementById('event-settings-btn');
   floorPlanBtn = document.getElementById('floor-plan-btn');
+  settingsBtn = document.getElementById('settings-btn');
+  
+  // Get admin sub-content sections
   guestManagementContent = document.getElementById('guest-management-content');
+  eventSettingsContent = document.getElementById('event-settings-content');
   floorPlanContent = document.getElementById('floor-plan-content');
+  settingsContent = document.getElementById('settings-content');
   
   // Search elements
   searchInput = document.getElementById('search-input');
@@ -201,9 +213,13 @@ function checkDOMElements() {
     { name: 'searchSection', element: searchSection },
     { name: 'adminSection', element: adminSection },
     { name: 'guestManagementBtn', element: guestManagementBtn },
+    { name: 'eventSettingsBtn', element: eventSettingsBtn },
     { name: 'floorPlanBtn', element: floorPlanBtn },
+    { name: 'settingsBtn', element: settingsBtn },
     { name: 'guestManagementContent', element: guestManagementContent },
+    { name: 'eventSettingsContent', element: eventSettingsContent },
     { name: 'floorPlanContent', element: floorPlanContent },
+    { name: 'settingsContent', element: settingsContent },
     { name: 'searchInput', element: searchInput },
     { name: 'alphabetBar', element: alphabetBar },
     { name: 'searchResults', element: searchResults },
@@ -306,7 +322,9 @@ function addEventListeners() {
   
   // Admin sub-navigation
   guestManagementBtn.addEventListener('click', () => switchAdminSubTab('guest-management'));
+  eventSettingsBtn.addEventListener('click', () => switchAdminSubTab('event-settings'));
   floorPlanBtn.addEventListener('click', () => switchAdminSubTab('floor-plan'));
+  settingsBtn.addEventListener('click', () => switchAdminSubTab('settings'));
   
   // Admin actions
   clearAllDataBtn.addEventListener('click', clearAllData);
@@ -438,11 +456,15 @@ function switchMode(mode) {
 function switchAdminSubTab(tab) {
   // Update sub-tab buttons
   guestManagementBtn.classList.toggle('active', tab === 'guest-management');
+  eventSettingsBtn.classList.toggle('active', tab === 'event-settings');
   floorPlanBtn.classList.toggle('active', tab === 'floor-plan');
+  settingsBtn.classList.toggle('active', tab === 'settings');
   
   // Update visible content
   guestManagementContent.classList.toggle('active', tab === 'guest-management');
+  eventSettingsContent.classList.toggle('active', tab === 'event-settings');
   floorPlanContent.classList.toggle('active', tab === 'floor-plan');
+  settingsContent.classList.toggle('active', tab === 'settings');
   
   // If switching to floor plan, render it
   if (tab === 'floor-plan') {

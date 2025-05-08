@@ -74,12 +74,51 @@
           <!-- Admin Sub Navigation -->
           <div class="admin-sub-nav">
             <button id="guest-management-btn" class="sub-tab active">Guest Management</button>
+            <button id="event-settings-btn" class="sub-tab">Event Settings</button>
             <button id="floor-plan-btn" class="sub-tab">Floor Plans</button>
+            <button id="settings-btn" class="sub-tab">Settings</button>
           </div>
         </div>
         
         <!-- Guest Management Content -->
         <div id="guest-management-content" class="admin-sub-content active">
+          <div class="admin-panel">
+            <!-- Import Guest List -->
+            <div class="panel-section">
+              <h3 class="section-heading">Import Guest List</h3>
+              <p class="help-text">Paste data in the format: Name,Role,TableNumber (e.g., John Doe,,1)</p>
+              <div class="form-group">
+                <textarea id="paste-data-area" class="form-control textarea" rows="8" placeholder="Paste guest data here..."></textarea>
+              </div>
+              <div class="form-actions">
+                <button id="process-pasted-data-btn" class="btn primary">Import Guests</button>
+                <button id="csv-import-btn" class="btn">Import CSV</button>
+                <input type="file" id="csv-file-input" accept=".csv" style="display:none">
+              </div>
+            </div>
+            
+            <!-- Guest Management -->
+            <div class="panel-section">
+              <h3>Guest Management</h3>
+              <button id="view-guests-btn" class="btn primary">View & Edit Guests</button>
+            </div>
+            
+            <!-- Clear Data -->
+            <div class="panel-section">
+              <h3>Clear Data</h3>
+              <div class="form-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="clear-event-name-checkbox">
+                  Also clear event name
+                </label>
+              </div>
+              <button id="clear-all-data-btn" class="btn danger">Clear All Data</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Event Settings Content -->
+        <div id="event-settings-content" class="admin-sub-content">
           <div class="admin-panel">
             <!-- Event Settings -->
             <div class="panel-section">
@@ -112,37 +151,16 @@
                 </div>
               </div>
             </div>
-            
-            <!-- Import Guest List (formerly Paste Guest Data) -->
+          </div>
+        </div>
+        
+        <!-- Settings Content -->
+        <div id="settings-content" class="admin-sub-content">
+          <div class="admin-panel">
+            <!-- Settings content will be added later -->
             <div class="panel-section">
-              <h3 class="section-heading">Import Guest List</h3>
-              <p class="help-text">Paste data in the format: Name,Role,TableNumber (e.g., John Doe,,1)</p>
-              <div class="form-group">
-                <textarea id="paste-data-area" class="form-control textarea" rows="8" placeholder="Paste guest data here..."></textarea>
-              </div>
-              <div class="form-actions">
-                <button id="process-pasted-data-btn" class="btn primary">Import Guests</button>
-                <button id="csv-import-btn" class="btn">Import CSV</button>
-                <input type="file" id="csv-file-input" accept=".csv" style="display:none">
-              </div>
-            </div>
-            
-            <!-- Guest Management -->
-            <div class="panel-section">
-              <h3>Guest Management</h3>
-              <button id="view-guests-btn" class="btn primary">View & Edit Guests</button>
-            </div>
-            
-            <!-- Clear Data -->
-            <div class="panel-section">
-              <h3>Clear Data</h3>
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="clear-event-name-checkbox">
-                  Also clear event name
-                </label>
-              </div>
-              <button id="clear-all-data-btn" class="btn danger">Clear All Data</button>
+              <h3 class="section-heading">Settings</h3>
+              <p>Settings options will be available soon.</p>
             </div>
           </div>
         </div>
