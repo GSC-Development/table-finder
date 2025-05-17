@@ -1104,6 +1104,10 @@ function renderFloorPlan() {
       bgImage = document.createElement('img');
       bgImage.className = 'floor-grid-bg-image';
       bgImage.alt = 'Floor Plan Background';
+      
+      // Set attributes first to ensure they load properly
+      bgImage.src = currentEvent.floorPlanImage;
+      
       // Add important inline styles
       bgImage.style.position = 'absolute';
       bgImage.style.top = '0';
@@ -1114,10 +1118,13 @@ function renderFloorPlan() {
       bgImage.style.opacity = '0.8';
       bgImage.style.zIndex = '0';
       bgImage.style.pointerEvents = 'none';
+      
+      // Append to grid after styles are set
       floorGrid.appendChild(bgImage);
+    } else {
+      // Update existing image source
+      bgImage.src = currentEvent.floorPlanImage;
     }
-    
-    bgImage.src = currentEvent.floorPlanImage;
   } else {
     floorGrid.classList.remove('has-bg-image');
     
@@ -2856,13 +2863,21 @@ function processFloorPlanImage(file) {
   const reader = new FileReader();
   
   reader.onload = function(e) {
+    // Store the image data
     currentEvent.floorPlanImage = e.target.result;
+    
+    // Update the image preview in the modal
     updateFloorPlanImageDisplay();
     
-    // If floor plan section is active, re-render it
-    if (floorPlanContent.classList.contains('active')) {
-      renderFloorPlan();
-    }
+    // Pre-load the image to ensure it's fully loaded before displaying
+    const img = new Image();
+    img.onload = function() {
+      // If floor plan section is active, re-render it after image is loaded
+      if (floorPlanContent && floorPlanContent.classList.contains('active')) {
+        renderFloorPlan();
+      }
+    };
+    img.src = e.target.result;
   };
   
   reader.readAsDataURL(file);
@@ -2925,11 +2940,20 @@ function confirmFloorImage() {
     removeFloorImageBtn.classList.toggle('hidden', !currentEvent.floorPlanImage);
   }
   
-  // Wait a moment before rendering to ensure modal is closed and DOM is ready
-  setTimeout(() => {
-    // Render the floor plan with the new image
-    renderFloorPlan();
-  }, 100);
+  // If we have an image, ensure it's loaded before rendering
+  if (currentEvent.floorPlanImage) {
+    const img = new Image();
+    img.onload = function() {
+      // Render the floor plan with the new image after it's loaded
+      renderFloorPlan();
+    };
+    img.src = currentEvent.floorPlanImage;
+  } else {
+    // No image, just render
+    setTimeout(() => {
+      renderFloorPlan();
+    }, 100);
+  }
 }
 
 // Show auto arrange modal

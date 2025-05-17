@@ -1,4 +1,4 @@
-// main.js - Electron main process file
+// File: main.js
 
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
@@ -6,6 +6,11 @@ const fs = require('fs');
 
 // Keep a global reference of the window object to prevent garbage collection
 let mainWindow;
+
+// Define the path for persistent storage
+const getUserDataPath = () => {
+  return path.join(app.getPath('userData'), 'seatplan-data.json');
+};
 
 // Create the browser window
 function createWindow() {
@@ -81,6 +86,33 @@ ipcMain.handle('open-data', async () => {
       return { success: true, data: JSON.parse(data) };
     }
     return { success: false, message: 'Open cancelled' };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+// NEW CODE: Handle persistent data storage
+ipcMain.handle('save-app-data', async (event, data) => {
+  try {
+    const filePath = getUserDataPath();
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    return { success: true };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+ipcMain.handle('load-app-data', async () => {
+  try {
+    const filePath = getUserDataPath();
+    
+    // Check if the file exists before trying to read it
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return { success: true, data: JSON.parse(data) };
+    } else {
+      return { success: false, message: 'No saved data found', noFile: true };
+    }
   } catch (error) {
     return { success: false, message: error.message };
   }
