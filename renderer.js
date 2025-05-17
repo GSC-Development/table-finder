@@ -406,6 +406,28 @@ function addEventListeners() {
   logoFileInput.addEventListener('change', handleFileSelect);
   removeLogoBtn.addEventListener('click', removeLogo);
   
+  // Make logo placeholder clickable
+  const logoPlaceholder = document.querySelector('.logo-placeholder');
+  if (logoPlaceholder) {
+    logoPlaceholder.addEventListener('click', () => logoFileInput.click());
+  }
+  
+  // Make header logo placeholder clickable
+  const headerLogoPlaceholder = document.getElementById('header-logo-placeholder');
+  if (headerLogoPlaceholder) {
+    headerLogoPlaceholder.addEventListener('click', () => {
+      // Switch to admin mode if not already there
+      if (!adminSection.classList.contains('active')) {
+        switchMode('admin');
+        // We need to check password first
+        showAdminPasswordPrompt();
+      } else {
+        // Open the logo file selector
+        logoFileInput.click();
+      }
+    });
+  }
+  
   // Guest management
   viewGuestsBtn.addEventListener('click', showGuestManagementModal);
   
@@ -2129,10 +2151,36 @@ function updateLogoDisplay() {
     headerLogo.alt = 'Event Logo';
     logoContainer.innerHTML = '';
     logoContainer.appendChild(headerLogo);
+    
+    // Hide header logo placeholder
+    const headerLogoPlaceholder = document.getElementById('header-logo-placeholder');
+    if (headerLogoPlaceholder) {
+      headerLogoPlaceholder.style.display = 'none';
+    }
   } else {
     logoPreview.classList.add('hidden');
     logoDropArea.classList.remove('hidden');
     logoContainer.innerHTML = '';
+    
+    // Show header logo placeholder
+    const headerLogoPlaceholder = document.getElementById('header-logo-placeholder');
+    if (headerLogoPlaceholder) {
+      headerLogoPlaceholder.style.display = 'flex';
+      
+      // Make sure it's visible in the container
+      logoContainer.innerHTML = '';
+      logoContainer.appendChild(headerLogoPlaceholder);
+    }
+  }
+  
+  // Show placeholder in admin view only when no logo is present
+  const logoPlaceholder = document.querySelector('.logo-placeholder');
+  if (logoPlaceholder) {
+    if (currentEvent.logo) {
+      logoPlaceholder.style.display = 'none';
+    } else {
+      logoPlaceholder.style.display = 'flex';
+    }
   }
 }
 
