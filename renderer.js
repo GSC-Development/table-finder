@@ -86,12 +86,11 @@ function init() {
   // Add event listeners
   addEventListeners();
   
-  // Initialize UI
-  updateUI();
+  // Load saved application data (or initialize with sample data if none exists)
+  loadAppData();
   
-  // Explicitly call renderTablesOverview with debug
-  console.log('Explicitly calling renderTablesOverview');
-  renderTablesOverview();
+  // Setup auto-save functionality
+  setupAutoSave();
   
   console.log('Application initialized with', currentEvent.guests.length, 'guests');
 }
@@ -584,8 +583,8 @@ function checkAdminPassword() {
     searchSection.classList.remove('active');
     adminSection.classList.add('active');
     
-    // Ensure guest management tab is active by default
-    switchAdminSubTab('guest-management');
+    // Ensure event settings tab is active by default
+    switchAdminSubTab('event-settings');
   } else {
     // Show error message - but only if we're in the password modal
     if (modalTitle && modalTitle.textContent === 'Admin Access') {
@@ -1196,33 +1195,45 @@ function renderFloorPlan() {
   });
 }
 
-// Handle dropping a table on the grid
+// Handle grid drop
 function handleGridDrop(e) {
   e.preventDefault();
   
-  if (!draggedTable || isFloorPlanLocked) return;
+  if (!draggedTable) return;
   
-  // Get the drop position relative to the grid
-  const rect = floorGrid.getBoundingClientRect();
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
+  console.log('Table dropped on grid:', draggedTable);
   
-  // Calculate position as percentage of grid dimensions (for responsive positioning)
-  const xPercent = (x / rect.width) * 100;
-  const yPercent = (y / rect.height) * 100;
+  // Calculate drop position as percentages from top-left
+  const bounds = floorGrid.getBoundingClientRect();
   
-  // Update table position
-  draggedTable.xPercent = xPercent;
-  draggedTable.yPercent = yPercent;
+  // Calculate the percentage coordinates relative to the grid bounds
+  let xPercent = ((e.clientX - bounds.left) / bounds.width) * 100;
+  let yPercent = ((e.clientY - bounds.top) / bounds.height) * 100;
   
-  // Mark table as placed
-  placedTables.add(draggedTable.id);
+  // Constrain within grid boundaries with padding
+  xPercent = Math.max(5, Math.min(95, xPercent));
+  yPercent = Math.max(5, Math.min(95, yPercent));
   
-  // Render the table on the grid
-  renderTableOnGrid(draggedTable);
+  // Find the corresponding table in our data
+  const tableData = currentEvent.tables.find(t => t.id === draggedTable.getAttribute('data-id'));
   
-  // Re-render the floor plan to update both panels
-  renderFloorPlan();
+  if (tableData) {
+    // Update the table position percentages
+    tableData.xPercent = xPercent;
+    tableData.yPercent = yPercent;
+    
+    // Add to placed tables set
+    placedTables.add(tableData.id);
+    
+    // Re-render the floor plan
+    renderFloorPlan();
+    
+    // Save the updated table positions
+    saveAppData();
+  }
+  
+  // Reset drag state
+  draggedTable = null;
 }
 
 // Render a single table on the grid
@@ -1319,15 +1330,14 @@ function handleMouseMove(e) {
 
 // Handle mouse up after dragging
 function handleMouseUp(e) {
-  if (!draggedTable || isFloorPlanLocked) return;
-  
-  // Get table element
-  const tableEl = document.getElementById(`table-${draggedTable.id}`);
-  if (tableEl) {
-    tableEl.classList.remove('dragging');
+  if (draggedTable) {
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+    
+    // Save the updated table positions
+    saveAppData();
   }
   
-  // Reset drag state
   draggedTable = null;
 }
 
@@ -1856,6 +1866,9 @@ function addNewTable() {
   // Update UI
   renderFloorPlan();
   closeModal();
+  
+  // Save app data after adding a new table
+  saveAppData();
 }
 
 // Show edit tables modal
@@ -1978,6 +1991,9 @@ function saveTableChanges(tableId) {
   // Update UI
   renderFloorPlan();
   showEditTablesModal();
+  
+  // Save app data after updating table
+  saveAppData();
 }
 
 // Delete table
@@ -2000,19 +2016,25 @@ function deleteTable(tableId) {
     }
   }
   
-  // Remove table
+  // Remove table from placedTables Set
+  placedTables.delete(tableId);
+  
+  // Remove table from event
   event.tables = event.tables.filter(t => t.id !== tableId);
   
   // Mark guests as unassigned
   event.guests.forEach(guest => {
     if (guest.tableId === tableId) {
-      guest.tableId = 'unassigned';
+      guest.tableId = null;
     }
   });
   
   // Update UI
   renderFloorPlan();
   showEditTablesModal();
+  
+  // Save app data after deleting table
+  saveAppData();
 }
 
 // Show modal
@@ -2043,6 +2065,9 @@ function saveEventName() {
   
   // Update UI
   updateUI();
+  
+  // Save app data after updating event information
+  saveAppData();
   
   // Show confirmation message
   alert('Event details saved successfully');
@@ -2228,6 +2253,9 @@ function saveNewGuest() {
   // Add to guests array
   currentEvent.guests.push(newGuest);
   
+  // Save app data after adding a new guest
+  saveAppData();
+  
   // Show success message and return to guest management
   alert(`Guest '${guestName}' added successfully`);
   showGuestManagementModal();
@@ -2347,6 +2375,9 @@ function saveGuestChanges(guestId) {
     </td>
   `;
   
+  // Save app data after updating guest
+  saveAppData();
+  
   // Update floor plan if it's visible
   if (floorPlanContent.classList.contains('active')) {
     renderFloorPlan();
@@ -2435,6 +2466,170 @@ function addSampleData() {
   console.log('Empty data initialized:', currentEvent);
 }
 
+// Save application data to persistent storage
+function saveAppData() {
+  try {
+    // Save the currentEvent data
+    window.api.saveAppData(currentEvent)
+      .then(result => {
+        if (result.success) {
+          console.log('App data saved successfully');
+        } else {
+          console.error('Failed to save app data:', result.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error saving app data:', error);
+      });
+  } catch (error) {
+    console.error('Error in saveAppData function:', error);
+  }
+}
+
+// Export event data to a file
+function exportEventData() {
+  try {
+    // Get the data as a JSON string
+    const eventData = JSON.stringify(currentEvent, null, 2);
+    
+    // Use the Electron API to show a save dialog and save the file
+    window.api.showSaveDialog({
+      title: 'Save Event Data',
+      defaultPath: `${currentEvent.name || 'event'}.json`,
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] }
+      ]
+    })
+    .then(result => {
+      if (!result.canceled && result.filePath) {
+        // Save to the selected file path
+        window.api.writeFile(result.filePath, eventData)
+          .then(() => {
+            alert('Event data successfully saved to file');
+          })
+          .catch(err => {
+            alert('Error saving event data: ' + err.message);
+          });
+      }
+    });
+  } catch (error) {
+    console.error('Error exporting event data:', error);
+    alert('Error exporting event data: ' + error.message);
+  }
+}
+
+// Import event data from a file
+function importEventData() {
+  try {
+    window.api.showOpenDialog({
+      title: 'Open Event Data',
+      filters: [
+        { name: 'JSON Files', extensions: ['json'] }
+      ],
+      properties: ['openFile']
+    })
+    .then(result => {
+      if (!result.canceled && result.filePaths.length > 0) {
+        window.api.readFile(result.filePaths[0])
+          .then(data => {
+            try {
+              const parsedData = JSON.parse(data);
+              
+              // Update current event with loaded data
+              currentEvent = parsedData;
+              
+              // Initialize placedTables Set from loaded data
+              placedTables = new Set();
+              if (currentEvent.tables) {
+                currentEvent.tables.forEach(table => {
+                  if (table.xPercent && table.yPercent) {
+                    placedTables.add(table.id);
+                  }
+                });
+              }
+              
+              // Update UI with loaded data
+              updateUI();
+              
+              // Save to default storage location
+              saveAppData();
+              
+              alert('Event data successfully loaded from file');
+            } catch (parseError) {
+              alert('Error parsing file: ' + parseError.message);
+            }
+          })
+          .catch(err => {
+            alert('Error reading file: ' + err.message);
+          });
+      }
+    });
+  } catch (error) {
+    console.error('Error importing event data:', error);
+    alert('Error importing event data: ' + error.message);
+  }
+}
+
+// Load application data from persistent storage
+function loadAppData() {
+  try {
+    window.api.loadAppData()
+      .then(result => {
+        if (result.success) {
+          console.log('App data loaded successfully');
+          
+          // Check if there's valid data
+          if (result.data && typeof result.data === 'object') {
+            // Update the current event with loaded data
+            currentEvent = result.data;
+            
+            // Initialize placedTables Set from saved data
+            placedTables = new Set();
+            if (currentEvent.tables) {
+              currentEvent.tables.forEach(table => {
+                if (table.xPercent && table.yPercent) {
+                  placedTables.add(table.id);
+                }
+              });
+            }
+            
+            // Update UI with loaded data
+            updateUI();
+            console.log('App data applied to UI');
+          }
+        } else {
+          if (result.noFile) {
+            console.log('No saved data found, using default data');
+            // Initialize with empty data
+            addSampleData();
+          } else {
+            console.error('Failed to load app data:', result.message);
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error loading app data:', error);
+        // Initialize with empty data in case of error
+        addSampleData();
+      });
+  } catch (error) {
+    console.error('Error in loadAppData function:', error);
+    // Initialize with empty data in case of error
+    addSampleData();
+  }
+}
+
+// Implement auto-save functionality
+function setupAutoSave() {
+  // Save data every 30 seconds
+  setInterval(saveAppData, 30000);
+  
+  // Save data when the page is about to unload (user closes window)
+  window.addEventListener('beforeunload', () => {
+    saveAppData();
+  });
+}
+
 // Initialize on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function() {
   console.log('DOM content loaded - initializing application');
@@ -2457,6 +2652,12 @@ document.addEventListener('DOMContentLoaded', function() {
       searchContainer.appendChild(searchButton);
     }
   }
+  
+  // Add listeners for menu operations
+  document.addEventListener('app-new-file', handleNewFile);
+  document.addEventListener('app-save-file', handleSaveFile);
+  document.addEventListener('app-save-file-as', handleSaveFileAs);
+  document.addEventListener('app-file-opened', handleFileOpened);
 });
 
 // Expose search function globally for debugging
@@ -2564,6 +2765,9 @@ function clearAllData() {
   
   // Update UI
   updateUI();
+  
+  // Save app data after clearing all data
+  saveAppData();
   
   // Reinitialize CSV import functionality
   console.log('Starting CSV import reinitialization...');
@@ -2907,10 +3111,8 @@ function removeFloorPlanImage() {
   currentEvent.floorPlanImage = null;
   updateFloorPlanImageDisplay();
   
-  // If floor plan section is active, re-render it
-  if (floorPlanContent && floorPlanContent.classList.contains('active')) {
-    renderFloorPlan();
-  }
+  // Save app data after removing floor plan image
+  saveAppData();
 }
 
 // Add the new functions for handling the floor plan image modal
@@ -2928,6 +3130,7 @@ function hideFloorImageModal() {
   floorImageModal.classList.add('hidden');
 }
 
+// Confirm floor image
 function confirmFloorImage() {
   // Update the display in the main UI
   updateFloorPlanImageDisplay();
@@ -2939,6 +3142,9 @@ function confirmFloorImage() {
   if (removeFloorImageBtn) {
     removeFloorImageBtn.classList.toggle('hidden', !currentEvent.floorPlanImage);
   }
+  
+  // Save app data after confirming floor plan image
+  saveAppData();
   
   // If we have an image, ensure it's loaded before rendering
   if (currentEvent.floorPlanImage) {
@@ -3017,6 +3223,9 @@ function applyAutoArrange() {
   
   // Re-render the floor plan
   renderFloorPlan();
+  
+  // Save the updated table positions
+  saveAppData();
 }
 
 // Apply grid layout
@@ -3062,6 +3271,9 @@ function applyGridLayout() {
     placedTables.add(table.id);
   });
   
+  // Save the updated table positions
+  saveAppData();
+  
   // Show confirmation
   alert(`${tables.length} tables arranged in a grid layout with ${tablesPerRow} tables per row.`);
 }
@@ -3100,6 +3312,9 @@ function applyCircleLayout() {
     // Mark table as placed
     placedTables.add(table.id);
   });
+  
+  // Save the updated table positions
+  saveAppData();
   
   // Show confirmation
   alert(`${tables.length} tables arranged in a circular layout.`);
@@ -3167,6 +3382,9 @@ function applyUShapeLayout() {
     tableIndex++;
   }
   
+  // Save the updated table positions
+  saveAppData();
+  
   // Show confirmation
   alert(`${tables.length} tables arranged in a U-shape layout.`);
 }
@@ -3213,4 +3431,101 @@ function changeAdminTimeout() {
   ADMIN_GRACE_PERIOD = parseInt(selectedValue);
   
   alert('Admin timeout updated successfully');
+}
+
+// Handle New File command from menu
+function handleNewFile() {
+  // Confirm with user if there are unsaved changes
+  if (confirm('Create a new event? Any unsaved changes will be lost.')) {
+    // Reset the current event to default state
+    currentEvent = {
+      name: '',
+      date: '',
+      logo: null,
+      floorPlanImage: null,
+      tableScale: 100,
+      tables: [],
+      guests: [],
+      adminPassword: '9999',
+      adminTimeout: 300000
+    };
+    
+    // Reset placedTables
+    placedTables = new Set();
+    
+    // Update UI
+    updateUI();
+  }
+}
+
+// Handle Save command from menu
+function handleSaveFile(event) {
+  const filePath = event?.detail;
+  if (!filePath) return;
+  
+  // Save the current event to the specified file
+  saveToFile(filePath);
+}
+
+// Handle Save As command from menu
+function handleSaveFileAs(event) {
+  const filePath = event?.detail;
+  if (!filePath) return;
+  
+  // Save the current event to the specified file
+  saveToFile(filePath);
+}
+
+// Handle file opened from menu
+function handleFileOpened(event) {
+  const data = event?.detail;
+  if (!data) return;
+  
+  try {
+    // Update current event with loaded data
+    currentEvent = data;
+    
+    // Initialize placedTables Set from loaded data
+    placedTables = new Set();
+    if (currentEvent.tables) {
+      currentEvent.tables.forEach(table => {
+        if (table.xPercent && table.yPercent) {
+          placedTables.add(table.id);
+        }
+      });
+    }
+    
+    // Update UI with loaded data
+    updateUI();
+    
+    console.log('File data loaded successfully');
+  } catch (error) {
+    console.error('Error loading file data:', error);
+    alert('Error loading file: ' + error.message);
+  }
+}
+
+// Save current event to a file
+function saveToFile(filePath) {
+  if (!filePath) return;
+  
+  try {
+    // Save the file
+    window.api.saveFileContents(filePath, currentEvent)
+      .then(result => {
+        if (result.success) {
+          console.log('File saved successfully:', result.filePath);
+        } else {
+          console.error('Failed to save file:', result.message);
+          alert('Failed to save file: ' + result.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error saving file:', error);
+        alert('Error saving file: ' + error.message);
+      });
+  } catch (error) {
+    console.error('Error in saveToFile:', error);
+    alert('Error saving file: ' + error.message);
+  }
 }

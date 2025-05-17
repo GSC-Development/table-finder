@@ -32,7 +32,16 @@
     ],
     "mac": {
       "category": "public.app-category.utilities",
-      "target": ["dmg", "zip"]
+      "target": ["dmg", "zip"],
+      "darkModeSupport": true,
+      "fileAssociations": [
+        {
+          "ext": "seatplan",
+          "name": "SeatPlan Event",
+          "role": "Editor",
+          "isPackage": false
+        }
+      ]
     },
     "dmg": {
       "contents": [
@@ -52,11 +61,38 @@
       "target": [
         "nsis",
         "portable"
+      ],
+      "fileAssociations": [
+        {
+          "ext": "seatplan",
+          "name": "SeatPlan Event",
+          "description": "SeatPlan Event File"
+        }
       ]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office",
+      "fileAssociations": [
+        {
+          "ext": "seatplan",
+          "name": "SeatPlan Event",
+          "description": "SeatPlan Event File",
+          "mimeType": "application/x-seatplan"
+        }
+      ]
+    },
+    "fileAssociations": [
+      {
+        "ext": "seatplan",
+        "name": "SeatPlan Event",
+        "description": "SeatPlan Event File",
+        "role": "Editor"
+      }
+    ]
   }
 }

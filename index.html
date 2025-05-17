@@ -73,15 +73,60 @@
           
           <!-- Admin Sub Navigation -->
           <div class="admin-sub-nav">
-            <button id="guest-management-btn" class="sub-tab active">Guest Management</button>
-            <button id="event-settings-btn" class="sub-tab">Event Settings</button>
+            <button id="event-settings-btn" class="sub-tab active">Event Settings</button>
+            <button id="guest-management-btn" class="sub-tab">Guest Management</button>
             <button id="floor-plan-btn" class="sub-tab">Floor Plans</button>
             <button id="settings-btn" class="sub-tab">Settings</button>
           </div>
         </div>
         
+        <!-- Event Settings Content -->
+        <div id="event-settings-content" class="admin-sub-content active">
+          <div class="admin-panel">
+            <!-- Event Settings -->
+            <div class="panel-section">
+              <h3 class="section-heading">Event Settings</h3>
+              
+              <div class="form-group">
+                <label for="event-name">Event Name</label>
+                <div class="form-input-group">
+                  <input type="text" id="event-name" class="form-control" placeholder="Enter event name">
+                  <button id="save-event-name" class="btn primary">Save</button>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="event-date">Event Date</label>
+                <input type="date" id="event-date" class="form-control">
+              </div>
+              
+              <div class="form-group">
+                <label for="logo-uploader">Event Logo (800 x 800px recommended)</label>
+                <div id="logo-drop-area" class="logo-drop-area">
+                  <div class="logo-placeholder">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="logo-placeholder-icon">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="16"></line>
+                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    <span>Add Logo</span>
+                  </div>
+                  <p>Drag & drop a logo image here</p>
+                  <div class="or-separator">OR</div>
+                  <input type="file" id="logo-file-input" accept="image/*" style="display:none">
+                  <button id="logo-select-btn" class="btn">Select Image</button>
+                </div>
+                <div id="logo-preview" class="logo-preview hidden">
+                  <img id="logo-preview-img" src="">
+                  <button id="remove-logo-btn" class="btn danger">Remove Logo</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <!-- Guest Management Content -->
-        <div id="guest-management-content" class="admin-sub-content active">
+        <div id="guest-management-content" class="admin-sub-content">
           <div class="admin-panel">
             <!-- Import Guest List -->
             <div class="panel-section">
@@ -113,43 +158,6 @@
                 </label>
               </div>
               <button id="clear-all-data-btn" class="btn danger">Clear All Data</button>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Event Settings Content -->
-        <div id="event-settings-content" class="admin-sub-content">
-          <div class="admin-panel">
-            <!-- Event Settings -->
-            <div class="panel-section">
-              <h3 class="section-heading">Event Settings</h3>
-              
-              <div class="form-group">
-                <label for="event-name">Event Name</label>
-                <div class="form-input-group">
-                  <input type="text" id="event-name" class="form-control" placeholder="Enter event name">
-                  <button id="save-event-name" class="btn primary">Save</button>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="event-date">Event Date</label>
-                <input type="date" id="event-date" class="form-control">
-              </div>
-              
-              <div class="form-group">
-                <label for="logo-uploader">Event Logo (800 x 800px recommended)</label>
-                <div id="logo-drop-area" class="logo-drop-area">
-                  <p>Drag & drop a logo image here</p>
-                  <div class="or-separator">OR</div>
-                  <input type="file" id="logo-file-input" accept="image/*" style="display:none">
-                  <button id="logo-select-btn" class="btn">Select Image</button>
-                </div>
-                <div id="logo-preview" class="logo-preview hidden">
-                  <img id="logo-preview-img" src="">
-                  <button id="remove-logo-btn" class="btn danger">Remove Logo</button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
